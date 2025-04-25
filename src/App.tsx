@@ -34,15 +34,78 @@ const App = () => (
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/login" element={<Login />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/courses" element={<Courses />} />
-              <Route path="/schedule" element={<Schedule />} />
-              <Route path="/grades" element={<Grades />} />
-              <Route path="/announcements" element={<Announcements />} />
-              <Route path="/fees" element={<Fees />} />
-              <Route path="/attendance" element={<Attendance />} />
-              <Route path="/study-helper" element={<StudyHelper />} />
-              <Route path="/profile" element={<Profile />} />
+              <Route 
+                path="/dashboard" 
+                element={
+                  <AppLayout>
+                    <Dashboard />
+                  </AppLayout>
+                } 
+              />
+              <Route 
+                path="/courses" 
+                element={
+                  <AppLayout>
+                    <Courses />
+                  </AppLayout>
+                } 
+              />
+              <Route 
+                path="/schedule" 
+                element={
+                  <AppLayout>
+                    <Schedule />
+                  </AppLayout>
+                } 
+              />
+              <Route 
+                path="/grades" 
+                element={
+                  <AppLayout>
+                    <Grades />
+                  </AppLayout>
+                } 
+              />
+              <Route 
+                path="/announcements" 
+                element={
+                  <AppLayout>
+                    <Announcements />
+                  </AppLayout>
+                } 
+              />
+              <Route 
+                path="/fees" 
+                element={
+                  <AppLayout>
+                    <Fees />
+                  </AppLayout>
+                } 
+              />
+              <Route 
+                path="/attendance" 
+                element={
+                  <AppLayout>
+                    <Attendance />
+                  </AppLayout>
+                } 
+              />
+              <Route 
+                path="/study-helper" 
+                element={
+                  <AppLayout>
+                    <StudyHelper />
+                  </AppLayout>
+                } 
+              />
+              <Route 
+                path="/profile" 
+                element={
+                  <AppLayout>
+                    <Profile />
+                  </AppLayout>
+                } 
+              />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
