@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,7 +6,6 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Spinner } from "@/components/ui/spinner";
 import { AlertCircle, Clock, CalendarDays, BookOpen, GraduationCap, Info } from "lucide-react";
-import AppLayout from "@/components/layout/AppLayout";
 import { useToast } from "@/components/ui/use-toast";
 
 const mockCourses = {
@@ -184,71 +182,67 @@ export default function Courses() {
 
   if (isLoading) {
     return (
-      <AppLayout>
-        <div className="flex flex-col items-center justify-center h-full">
-          <Spinner size="lg" />
-          <p className="mt-4 text-muted-foreground">Loading courses...</p>
-        </div>
-      </AppLayout>
+      <div className="flex flex-col items-center justify-center h-full">
+        <Spinner size="lg" />
+        <p className="mt-4 text-muted-foreground">Loading courses...</p>
+      </div>
     );
   }
 
   return (
-    <AppLayout>
-      <div className="container mx-auto px-4">
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold mb-2">Courses</h1>
-          <p className="text-muted-foreground">
-            Manage your course enrollments and explore available courses
-          </p>
-        </div>
-
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="mb-4">
-            <TabsTrigger value="enrolled">Enrolled Courses ({enrolledCourses.length})</TabsTrigger>
-            <TabsTrigger value="available">Available Courses ({availableCourses.length})</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="enrolled" className="space-y-4">
-            {enrolledCourses.length === 0 ? (
-              <div className="text-center py-10">
-                <AlertCircle className="mx-auto h-10 w-10 text-muted-foreground" />
-                <h3 className="mt-4 text-lg font-medium">No Courses Enrolled</h3>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  You are not enrolled in any courses yet. Check available courses to enroll.
-                </p>
-                <Button 
-                  variant="outline" 
-                  className="mt-4"
-                  onClick={() => navigateToTab("available")}
-                >
-                  Browse Available Courses
-                </Button>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {enrolledCourses.map(course => renderCourseCard(course, true))}
-              </div>
-            )}
-          </TabsContent>
-          
-          <TabsContent value="available" className="space-y-4">
-            {availableCourses.length === 0 ? (
-              <div className="text-center py-10">
-                <AlertCircle className="mx-auto h-10 w-10 text-muted-foreground" />
-                <h3 className="mt-4 text-lg font-medium">No Available Courses</h3>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  There are no courses available for enrollment at this time.
-                </p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {availableCourses.map(course => renderCourseCard(course))}
-              </div>
-            )}
-          </TabsContent>
-        </Tabs>
+    <div className="container mx-auto px-4">
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold mb-2">Courses</h1>
+        <p className="text-muted-foreground">
+          Manage your course enrollments and explore available courses
+        </p>
       </div>
-    </AppLayout>
+
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="mb-4">
+          <TabsTrigger value="enrolled">Enrolled Courses ({enrolledCourses.length})</TabsTrigger>
+          <TabsTrigger value="available">Available Courses ({availableCourses.length})</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="enrolled" className="space-y-4">
+          {enrolledCourses.length === 0 ? (
+            <div className="text-center py-10">
+              <AlertCircle className="mx-auto h-10 w-10 text-muted-foreground" />
+              <h3 className="mt-4 text-lg font-medium">No Courses Enrolled</h3>
+              <p className="mt-2 text-sm text-muted-foreground">
+                You are not enrolled in any courses yet. Check available courses to enroll.
+              </p>
+              <Button 
+                variant="outline" 
+                className="mt-4"
+                onClick={() => navigateToTab("available")}
+              >
+                Browse Available Courses
+              </Button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {enrolledCourses.map(course => renderCourseCard(course, true))}
+            </div>
+          )}
+        </TabsContent>
+        
+        <TabsContent value="available" className="space-y-4">
+          {availableCourses.length === 0 ? (
+            <div className="text-center py-10">
+              <AlertCircle className="mx-auto h-10 w-10 text-muted-foreground" />
+              <h3 className="mt-4 text-lg font-medium">No Available Courses</h3>
+              <p className="mt-2 text-sm text-muted-foreground">
+                There are no courses available for enrollment at this time.
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {availableCourses.map(course => renderCourseCard(course))}
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
+    </div>
   );
 }

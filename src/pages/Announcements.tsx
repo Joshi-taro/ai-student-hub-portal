@@ -1,7 +1,5 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import AppLayout from '@/components/layout/AppLayout';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -163,188 +161,186 @@ export default function Announcements() {
 
   if (isLoading) {
     return (
-      <AppLayout>
+      <div className="container mx-auto px-4">
         <div className="flex flex-col items-center justify-center h-full">
           <Spinner size="lg" />
           <p className="mt-4 text-muted-foreground">Loading announcements...</p>
         </div>
-      </AppLayout>
+      </div>
     );
   }
 
   return (
-    <AppLayout>
-      <div className="container mx-auto px-4">
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold mb-2">Announcements</h1>
-          <p className="text-muted-foreground">
-            Stay updated with the latest university and course announcements
-          </p>
+    <div className="container mx-auto px-4">
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold mb-2">Announcements</h1>
+        <p className="text-muted-foreground">
+          Stay updated with the latest university and course announcements
+        </p>
+      </div>
+      
+      <div className="flex flex-col md:flex-row gap-4 mb-6">
+        <div className="relative flex-grow">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+          <Input
+            className="pl-10"
+            placeholder="Search announcements..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
         </div>
-        
-        <div className="flex flex-col md:flex-row gap-4 mb-6">
-          <div className="relative flex-grow">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-            <Input
-              className="pl-10"
-              placeholder="Search announcements..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
-          <div className="flex gap-2">
-            <Button
-              variant={filter === 'all' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setFilter('all')}
-              className={filter === 'all' ? 'bg-university-primary' : ''}
-            >
-              <Filter className="mr-1 h-4 w-4" />
-              All
-            </Button>
-            <Button
-              variant={filter === 'important' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setFilter('important')}
-              className={filter === 'important' ? 'bg-university-primary' : ''}
-            >
-              <Bell className="mr-1 h-4 w-4" />
-              Important
-            </Button>
-            <Button
-              variant={filter === 'course' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setFilter('course')}
-              className={filter === 'course' ? 'bg-university-primary' : ''}
-            >
-              <BookOpen className="mr-1 h-4 w-4" />
-              Courses
-            </Button>
-            <Button
-              variant={filter === 'administrative' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setFilter('administrative')}
-              className={filter === 'administrative' ? 'bg-university-primary' : ''}
-            >
-              <Megaphone className="mr-1 h-4 w-4" />
-              Admin
-            </Button>
-          </div>
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="col-span-1 space-y-3">
-            {filteredAnnouncements.length === 0 ? (
-              <Card>
-                <CardContent className="pt-6 text-center">
-                  <Bell className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
-                  <p>No announcements match your search criteria.</p>
-                </CardContent>
-              </Card>
-            ) : (
-              filteredAnnouncements.map(announcement => (
-                <Card 
-                  key={announcement.id}
-                  onClick={() => setSelectedAnnouncement(announcement.id)}
-                  className={cn(
-                    "cursor-pointer transition-colors",
-                    announcement.id === selectedAnnouncement
-                      ? "border-university-primary"
-                      : "hover:bg-gray-50"
-                  )}
-                >
-                  <CardHeader className="pb-2">
-                    <div className="flex justify-between items-start">
-                      <CardTitle className="text-lg">
-                        {announcement.title}
-                        {announcement.isImportant && (
-                          <span className="ml-2 inline-flex h-2 w-2 rounded-full bg-red-500"></span>
-                        )}
-                      </CardTitle>
-                    </div>
-                    <CardDescription className="flex items-center">
-                      <Calendar className="mr-1 h-3 w-3" />
-                      {formatDate(announcement.date)}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="pb-3">
-                    <div className="flex justify-between items-center">
-                      <Badge variant="outline" className={getTypeColor(announcement.type)}>
-                        {announcement.type}
-                      </Badge>
-                      <span className="text-sm text-muted-foreground">
-                        {announcement.course || announcement.department}
-                      </span>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
-            )}
-          </div>
-          
-          <div className="col-span-1 md:col-span-2">
-            <Card className="h-full">
-              {selectedAnnouncement ? (
-                (() => {
-                  const selected = announcements.find(a => a.id === selectedAnnouncement);
-                  if (!selected) return null;
-                  
-                  return (
-                    <>
-                      <CardHeader>
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <CardTitle className="text-xl flex items-center">
-                              {selected.title}
-                              {selected.isImportant && (
-                                <Badge variant="destructive" className="ml-2">Important</Badge>
-                              )}
-                            </CardTitle>
-                            <CardDescription className="mt-1">
-                              {selected.author} • {formatDate(selected.date)}
-                            </CardDescription>
-                          </div>
-                          <Badge 
-                            variant="outline"
-                            className={getTypeColor(selected.type)}
-                          >
-                            {selected.type}
-                          </Badge>
-                        </div>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="mb-4">
-                          <Badge variant="outline">
-                            {selected.course || selected.department}
-                          </Badge>
-                        </div>
-                        <div className="prose">
-                          <p>{selected.content}</p>
-                        </div>
-                      </CardContent>
-                      <CardFooter className="flex justify-end border-t pt-4">
-                        <Button variant="ghost" size="sm" className="text-university-primary">
-                          Mark as Read
-                        </Button>
-                      </CardFooter>
-                    </>
-                  );
-                })()
-              ) : (
-                <div className="flex flex-col items-center justify-center h-full py-16">
-                  <Bell className="h-16 w-16 text-muted-foreground mb-4" />
-                  <h3 className="text-xl font-semibold mb-2">
-                    Select an announcement
-                  </h3>
-                  <p className="text-muted-foreground text-center max-w-md">
-                    Click on an announcement from the list to view its details here.
-                  </p>
-                </div>
-              )}
-            </Card>
-          </div>
+        <div className="flex gap-2">
+          <Button
+            variant={filter === 'all' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setFilter('all')}
+            className={filter === 'all' ? 'bg-university-primary' : ''}
+          >
+            <Filter className="mr-1 h-4 w-4" />
+            All
+          </Button>
+          <Button
+            variant={filter === 'important' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setFilter('important')}
+            className={filter === 'important' ? 'bg-university-primary' : ''}
+          >
+            <Bell className="mr-1 h-4 w-4" />
+            Important
+          </Button>
+          <Button
+            variant={filter === 'course' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setFilter('course')}
+            className={filter === 'course' ? 'bg-university-primary' : ''}
+          >
+            <BookOpen className="mr-1 h-4 w-4" />
+            Courses
+          </Button>
+          <Button
+            variant={filter === 'administrative' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setFilter('administrative')}
+            className={filter === 'administrative' ? 'bg-university-primary' : ''}
+          >
+            <Megaphone className="mr-1 h-4 w-4" />
+            Admin
+          </Button>
         </div>
       </div>
-    </AppLayout>
+      
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="col-span-1 space-y-3">
+          {filteredAnnouncements.length === 0 ? (
+            <Card>
+              <CardContent className="pt-6 text-center">
+                <Bell className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
+                <p>No announcements match your search criteria.</p>
+              </CardContent>
+            </Card>
+          ) : (
+            filteredAnnouncements.map(announcement => (
+              <Card 
+                key={announcement.id}
+                onClick={() => setSelectedAnnouncement(announcement.id)}
+                className={cn(
+                  "cursor-pointer transition-colors",
+                  announcement.id === selectedAnnouncement
+                    ? "border-university-primary"
+                    : "hover:bg-gray-50"
+                )}
+              >
+                <CardHeader className="pb-2">
+                  <div className="flex justify-between items-start">
+                    <CardTitle className="text-lg">
+                      {announcement.title}
+                      {announcement.isImportant && (
+                        <span className="ml-2 inline-flex h-2 w-2 rounded-full bg-red-500"></span>
+                      )}
+                    </CardTitle>
+                  </div>
+                  <CardDescription className="flex items-center">
+                    <Calendar className="mr-1 h-3 w-3" />
+                    {formatDate(announcement.date)}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="pb-3">
+                  <div className="flex justify-between items-center">
+                    <Badge variant="outline" className={getTypeColor(announcement.type)}>
+                      {announcement.type}
+                    </Badge>
+                    <span className="text-sm text-muted-foreground">
+                      {announcement.course || announcement.department}
+                    </span>
+                  </div>
+                </CardContent>
+              </Card>
+            ))
+          )}
+        </div>
+        
+        <div className="col-span-1 md:col-span-2">
+          <Card className="h-full">
+            {selectedAnnouncement ? (
+              (() => {
+                const selected = announcements.find(a => a.id === selectedAnnouncement);
+                if (!selected) return null;
+                
+                return (
+                  <>
+                    <CardHeader>
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <CardTitle className="text-xl flex items-center">
+                            {selected.title}
+                            {selected.isImportant && (
+                              <Badge variant="destructive" className="ml-2">Important</Badge>
+                            )}
+                          </CardTitle>
+                          <CardDescription className="mt-1">
+                            {selected.author} • {formatDate(selected.date)}
+                          </CardDescription>
+                        </div>
+                        <Badge 
+                          variant="outline"
+                          className={getTypeColor(selected.type)}
+                        >
+                          {selected.type}
+                        </Badge>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="mb-4">
+                        <Badge variant="outline">
+                          {selected.course || selected.department}
+                        </Badge>
+                      </div>
+                      <div className="prose">
+                        <p>{selected.content}</p>
+                      </div>
+                    </CardContent>
+                    <CardFooter className="flex justify-end border-t pt-4">
+                      <Button variant="ghost" size="sm" className="text-university-primary">
+                        Mark as Read
+                      </Button>
+                    </CardFooter>
+                  </>
+                );
+              })()
+            ) : (
+              <div className="flex flex-col items-center justify-center h-full py-16">
+                <Bell className="h-16 w-16 text-muted-foreground mb-4" />
+                <h3 className="text-xl font-semibold mb-2">
+                  Select an announcement
+                </h3>
+                <p className="text-muted-foreground text-center max-w-md">
+                  Click on an announcement from the list to view its details here.
+                </p>
+              </div>
+            )}
+          </Card>
+        </div>
+      </div>
+    </div>
   );
 }

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -81,7 +80,7 @@ export default function Dashboard() {
   const data = role === 'student' ? studentData : facultyData;
   
   return (
-    <div className="space-y-6">
+    <div className="container mx-auto px-4">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Dashboard</h1>

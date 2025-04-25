@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import AppLayout from '@/components/layout/AppLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Spinner } from '@/components/ui/spinner';
 import { Badge } from '@/components/ui/badge';
@@ -178,254 +177,252 @@ export default function Schedule() {
 
   if (isLoading) {
     return (
-      <AppLayout>
+      <div className="container mx-auto px-4">
         <div className="flex flex-col items-center justify-center h-full">
           <Spinner size="lg" />
           <p className="mt-4 text-muted-foreground">Loading schedule...</p>
         </div>
-      </AppLayout>
+      </div>
     );
   }
 
   return (
-    <AppLayout>
-      <div className="container mx-auto px-4">
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold mb-2">Schedule</h1>
-          <p className="text-muted-foreground">Your weekly class timetable</p>
-        </div>
-        
-        <Card className="mb-6">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-xl">
-              <Calendar className="inline mr-2" size={20} />
-              Weekly Schedule
-            </CardTitle>
-            <div className="flex space-x-2">
-              <button 
-                onClick={goToPreviousWeek} 
-                className="p-1 rounded hover:bg-gray-100"
-              >
-                ← Previous
-              </button>
-              <button 
-                onClick={goToCurrentWeek} 
-                className="px-3 py-1 text-sm bg-university-primary text-white rounded hover:bg-university-primary/90"
-              >
-                Today
-              </button>
-              <button 
-                onClick={goToNextWeek} 
-                className="p-1 rounded hover:bg-gray-100"
-              >
-                Next →
-              </button>
+    <div className="container mx-auto px-4">
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold mb-2">Schedule</h1>
+        <p className="text-muted-foreground">Your weekly class timetable</p>
+      </div>
+      
+      <Card className="mb-6">
+        <CardHeader className="flex flex-row items-center justify-between pb-2">
+          <CardTitle className="text-xl">
+            <Calendar className="inline mr-2" size={20} />
+            Weekly Schedule
+          </CardTitle>
+          <div className="flex space-x-2">
+            <button 
+              onClick={goToPreviousWeek} 
+              className="p-1 rounded hover:bg-gray-100"
+            >
+              ← Previous
+            </button>
+            <button 
+              onClick={goToCurrentWeek} 
+              className="px-3 py-1 text-sm bg-university-primary text-white rounded hover:bg-university-primary/90"
+            >
+              Today
+            </button>
+            <button 
+              onClick={goToNextWeek} 
+              className="p-1 rounded hover:bg-gray-100"
+            >
+              Next →
+            </button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <div className="w-full min-w-[800px]">
+              <div className="flex h-12 border-b">
+                <div className="w-16 flex-shrink-0"></div>
+                {daysOfWeek.map((day, index) => (
+                  <div 
+                    key={day} 
+                    className={cn(
+                      "flex-1 text-center font-medium p-2 flex flex-col justify-center",
+                      isToday(weekDates[index]) && "bg-university-accent/10"
+                    )}
+                  >
+                    <span className="block">{day}</span>
+                    <span className="text-xs text-muted-foreground">{formatDate(weekDates[index])}</span>
+                  </div>
+                ))}
+              </div>
+              
+              <div className="relative" style={{ height: `${timeSlots.length * 60}px` }}>
+                {/* Time slots */}
+                {timeSlots.map((time, index) => (
+                  <div 
+                    key={time} 
+                    className="absolute w-full border-b border-gray-200 flex"
+                    style={{ top: `${index * 60}px`, height: '60px' }}
+                  >
+                    <div className="w-16 flex-shrink-0 text-xs text-gray-500 pr-2 text-right -mt-2.5">
+                      {time}
+                    </div>
+                    <div className="flex-1 grid grid-cols-7 divide-x">
+                      {daysOfWeek.map(day => (
+                        <div key={`${day}-${time}`} className="h-full"></div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+                
+                {/* Classes */}
+                {daysOfWeek.map((day, dayIndex) => (
+                  <React.Fragment key={day}>
+                    {scheduleData[day]?.map((cls) => {
+                      const position = getClassPosition(cls.startTime, cls.endTime);
+                      const colorClass = courseColors[cls.courseCode] || 'bg-gray-100 border-gray-300 text-gray-900';
+                      
+                      return (
+                        <div
+                          key={`${day}-${cls.id}`}
+                          className={cn(
+                            "absolute rounded border z-10 p-2 overflow-hidden shadow-sm",
+                            colorClass
+                          )}
+                          style={{
+                            top: position.top,
+                            height: position.height,
+                            left: `calc(${dayIndex * (100/7)}% + ${16/7}rem)`,
+                            width: `calc(${100/7}% - ${16/7}rem)`
+                          }}
+                        >
+                          <div className="text-xs font-bold">{cls.courseCode}</div>
+                          <div className="text-xs font-medium truncate">{cls.courseName}</div>
+                          <div className="flex items-center text-xs mt-1">
+                            <Clock size={10} className="mr-1" />
+                            {cls.startTime} - {cls.endTime}
+                          </div>
+                          <div className="flex items-center text-xs mt-1 truncate">
+                            <MapPin size={10} className="mr-1 flex-shrink-0" />
+                            {cls.location}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </React.Fragment>
+                ))}
+              </div>
             </div>
+          </div>
+        </CardContent>
+      </Card>
+      
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <Card>
+          <CardHeader>
+            <CardTitle>Today's Classes</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="overflow-x-auto">
-              <div className="w-full min-w-[800px]">
-                <div className="flex h-12 border-b">
-                  <div className="w-16 flex-shrink-0"></div>
-                  {daysOfWeek.map((day, index) => (
+            <div className="space-y-4">
+              {(() => {
+                const today = new Date();
+                const dayName = daysOfWeek[today.getDay() === 0 ? 6 : today.getDay() - 1];
+                const todaysClasses = scheduleData[dayName] || [];
+                
+                if (todaysClasses.length === 0) {
+                  return (
+                    <div className="text-center py-8">
+                      <p className="text-muted-foreground">No classes scheduled for today.</p>
+                    </div>
+                  );
+                }
+                
+                return todaysClasses.sort((a, b) => a.startTime.localeCompare(b.startTime)).map((cls) => {
+                  const colorClass = courseColors[cls.courseCode] || 'bg-gray-100 border-gray-300 text-gray-900';
+                  
+                  return (
                     <div 
-                      key={day} 
+                      key={cls.id} 
                       className={cn(
-                        "flex-1 text-center font-medium p-2 flex flex-col justify-center",
-                        isToday(weekDates[index]) && "bg-university-accent/10"
+                        "p-3 rounded-md border",
+                        colorClass
                       )}
                     >
-                      <span className="block">{day}</span>
-                      <span className="text-xs text-muted-foreground">{formatDate(weekDates[index])}</span>
-                    </div>
-                  ))}
-                </div>
-                
-                <div className="relative" style={{ height: `${timeSlots.length * 60}px` }}>
-                  {/* Time slots */}
-                  {timeSlots.map((time, index) => (
-                    <div 
-                      key={time} 
-                      className="absolute w-full border-b border-gray-200 flex"
-                      style={{ top: `${index * 60}px`, height: '60px' }}
-                    >
-                      <div className="w-16 flex-shrink-0 text-xs text-gray-500 pr-2 text-right -mt-2.5">
-                        {time}
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <div className="font-medium">{cls.courseName}</div>
+                          <div className="text-sm">{cls.instructor}</div>
+                        </div>
+                        <Badge variant="outline" className={colorClass}>{cls.courseCode}</Badge>
                       </div>
-                      <div className="flex-1 grid grid-cols-7 divide-x">
-                        {daysOfWeek.map(day => (
-                          <div key={`${day}-${time}`} className="h-full"></div>
-                        ))}
+                      <div className="mt-2 flex items-center text-sm">
+                        <Clock size={14} className="mr-1" />
+                        {cls.startTime} - {cls.endTime}
+                      </div>
+                      <div className="mt-1 flex items-center text-sm">
+                        <MapPin size={14} className="mr-1" />
+                        {cls.location}
                       </div>
                     </div>
-                  ))}
-                  
-                  {/* Classes */}
-                  {daysOfWeek.map((day, dayIndex) => (
-                    <React.Fragment key={day}>
-                      {scheduleData[day]?.map((cls) => {
-                        const position = getClassPosition(cls.startTime, cls.endTime);
-                        const colorClass = courseColors[cls.courseCode] || 'bg-gray-100 border-gray-300 text-gray-900';
-                        
-                        return (
-                          <div
-                            key={`${day}-${cls.id}`}
-                            className={cn(
-                              "absolute rounded border z-10 p-2 overflow-hidden shadow-sm",
-                              colorClass
-                            )}
-                            style={{
-                              top: position.top,
-                              height: position.height,
-                              left: `calc(${dayIndex * (100/7)}% + ${16/7}rem)`,
-                              width: `calc(${100/7}% - ${16/7}rem)`
-                            }}
-                          >
-                            <div className="text-xs font-bold">{cls.courseCode}</div>
-                            <div className="text-xs font-medium truncate">{cls.courseName}</div>
-                            <div className="flex items-center text-xs mt-1">
-                              <Clock size={10} className="mr-1" />
-                              {cls.startTime} - {cls.endTime}
-                            </div>
-                            <div className="flex items-center text-xs mt-1 truncate">
-                              <MapPin size={10} className="mr-1 flex-shrink-0" />
-                              {cls.location}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </React.Fragment>
-                  ))}
-                </div>
-              </div>
+                  );
+                });
+              })()}
             </div>
           </CardContent>
         </Card>
         
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Today's Classes</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {(() => {
-                  const today = new Date();
-                  const dayName = daysOfWeek[today.getDay() === 0 ? 6 : today.getDay() - 1];
-                  const todaysClasses = scheduleData[dayName] || [];
+        <Card>
+          <CardHeader>
+            <CardTitle>Upcoming Classes</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {(() => {
+                // Get upcoming classes (next 3 days)
+                const today = new Date();
+                const todayIndex = today.getDay() === 0 ? 6 : today.getDay() - 1;
+                
+                let upcomingClasses = [];
+                for (let i = 1; i <= 3; i++) {
+                  const nextDayIndex = (todayIndex + i) % 7;
+                  const nextDay = daysOfWeek[nextDayIndex];
+                  const nextDayClasses = scheduleData[nextDay] || [];
                   
-                  if (todaysClasses.length === 0) {
-                    return (
-                      <div className="text-center py-8">
-                        <p className="text-muted-foreground">No classes scheduled for today.</p>
+                  upcomingClasses = [
+                    ...upcomingClasses,
+                    ...nextDayClasses.map(cls => ({
+                      ...cls,
+                      day: nextDay,
+                      dayIndex: nextDayIndex
+                    }))
+                  ];
+                }
+                
+                if (upcomingClasses.length === 0) {
+                  return (
+                    <div className="text-center py-8">
+                      <p className="text-muted-foreground">No upcoming classes in the next few days.</p>
+                    </div>
+                  );
+                }
+                
+                return upcomingClasses.slice(0, 4).map((cls) => {
+                  const colorClass = courseColors[cls.courseCode] || 'bg-gray-100 border-gray-300 text-gray-900';
+                  
+                  return (
+                    <div 
+                      key={`${cls.day}-${cls.id}`} 
+                      className={cn(
+                        "p-3 rounded-md border",
+                        colorClass
+                      )}
+                    >
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <div className="font-medium">{cls.courseName}</div>
+                          <div className="text-sm">{cls.day}</div>
+                        </div>
+                        <Badge variant="outline" className={colorClass}>{cls.courseCode}</Badge>
                       </div>
-                    );
-                  }
-                  
-                  return todaysClasses.sort((a, b) => a.startTime.localeCompare(b.startTime)).map((cls) => {
-                    const colorClass = courseColors[cls.courseCode] || 'bg-gray-100 border-gray-300 text-gray-900';
-                    
-                    return (
-                      <div 
-                        key={cls.id} 
-                        className={cn(
-                          "p-3 rounded-md border",
-                          colorClass
-                        )}
-                      >
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <div className="font-medium">{cls.courseName}</div>
-                            <div className="text-sm">{cls.instructor}</div>
-                          </div>
-                          <Badge variant="outline" className={colorClass}>{cls.courseCode}</Badge>
-                        </div>
-                        <div className="mt-2 flex items-center text-sm">
-                          <Clock size={14} className="mr-1" />
-                          {cls.startTime} - {cls.endTime}
-                        </div>
-                        <div className="mt-1 flex items-center text-sm">
-                          <MapPin size={14} className="mr-1" />
-                          {cls.location}
-                        </div>
+                      <div className="mt-2 flex items-center text-sm">
+                        <Clock size={14} className="mr-1" />
+                        {cls.startTime} - {cls.endTime}
                       </div>
-                    );
-                  });
-                })()}
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader>
-              <CardTitle>Upcoming Classes</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {(() => {
-                  // Get upcoming classes (next 3 days)
-                  const today = new Date();
-                  const todayIndex = today.getDay() === 0 ? 6 : today.getDay() - 1;
-                  
-                  let upcomingClasses = [];
-                  for (let i = 1; i <= 3; i++) {
-                    const nextDayIndex = (todayIndex + i) % 7;
-                    const nextDay = daysOfWeek[nextDayIndex];
-                    const nextDayClasses = scheduleData[nextDay] || [];
-                    
-                    upcomingClasses = [
-                      ...upcomingClasses,
-                      ...nextDayClasses.map(cls => ({
-                        ...cls,
-                        day: nextDay,
-                        dayIndex: nextDayIndex
-                      }))
-                    ];
-                  }
-                  
-                  if (upcomingClasses.length === 0) {
-                    return (
-                      <div className="text-center py-8">
-                        <p className="text-muted-foreground">No upcoming classes in the next few days.</p>
+                      <div className="mt-1 flex items-center text-sm">
+                        <MapPin size={14} className="mr-1" />
+                        {cls.location}
                       </div>
-                    );
-                  }
-                  
-                  return upcomingClasses.slice(0, 4).map((cls) => {
-                    const colorClass = courseColors[cls.courseCode] || 'bg-gray-100 border-gray-300 text-gray-900';
-                    
-                    return (
-                      <div 
-                        key={`${cls.day}-${cls.id}`} 
-                        className={cn(
-                          "p-3 rounded-md border",
-                          colorClass
-                        )}
-                      >
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <div className="font-medium">{cls.courseName}</div>
-                            <div className="text-sm">{cls.day}</div>
-                          </div>
-                          <Badge variant="outline" className={colorClass}>{cls.courseCode}</Badge>
-                        </div>
-                        <div className="mt-2 flex items-center text-sm">
-                          <Clock size={14} className="mr-1" />
-                          {cls.startTime} - {cls.endTime}
-                        </div>
-                        <div className="mt-1 flex items-center text-sm">
-                          <MapPin size={14} className="mr-1" />
-                          {cls.location}
-                        </div>
-                      </div>
-                    );
-                  });
-                })()}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+                    </div>
+                  );
+                });
+              })()}
+            </div>
+          </CardContent>
+        </Card>
       </div>
-    </AppLayout>
+    </div>
   );
 }
