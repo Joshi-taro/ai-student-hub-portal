@@ -83,6 +83,7 @@ export default function Courses() {
   const [isLoading, setIsLoading] = useState(true);
   const [enrolledCourses, setEnrolledCourses] = useState(mockCourses.enrolled);
   const [availableCourses, setAvailableCourses] = useState(mockCourses.available);
+  const [activeTab, setActiveTab] = useState("enrolled");
 
   useEffect(() => {
     // Simulate API fetch delay
@@ -177,6 +178,10 @@ export default function Courses() {
     </Card>
   );
 
+  const navigateToTab = (tabId: string) => {
+    setActiveTab(tabId);
+  };
+
   if (isLoading) {
     return (
       <AppLayout>
@@ -198,7 +203,7 @@ export default function Courses() {
           </p>
         </div>
 
-        <Tabs defaultValue="enrolled" className="w-full">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="mb-4">
             <TabsTrigger value="enrolled">Enrolled Courses ({enrolledCourses.length})</TabsTrigger>
             <TabsTrigger value="available">Available Courses ({availableCourses.length})</TabsTrigger>
@@ -215,7 +220,7 @@ export default function Courses() {
                 <Button 
                   variant="outline" 
                   className="mt-4"
-                  onClick={() => document.querySelector('button[value="available"]')?.click()}
+                  onClick={() => navigateToTab("available")}
                 >
                   Browse Available Courses
                 </Button>
