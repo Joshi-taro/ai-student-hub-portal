@@ -11,26 +11,230 @@ import { Spinner } from '@/components/ui/spinner';
 import { CheckCircle, XCircle, AlertCircle, CalendarDays, Clock, BarChart3, BookOpen, Calendar as CalendarIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-const mockAttendanceData = {
-  // ... keep existing mockAttendanceData
+// Define types for our attendance data
+interface AttendanceLog {
+  date: string;
+  courseCode: string;
+  courseName: string;
+  time: string;
+  location: string;
+  status: string;
+  reason?: string;
+}
+
+interface CourseAttendance {
+  courseCode: string;
+  courseName: string;
+  attendancePercentage: number;
+  totalClasses: number;
+  attendedClasses: number;
+  missedClasses: number;
+  schedule: string;
+  status: string;
+}
+
+interface CalendarEvent {
+  status: string;
+  courseCode: string;
+}
+
+interface AttendanceSummary {
+  overallAttendance: number;
+  threshold: number;
+  totalClasses: number;
+  attendedClasses: number;
+  missedClasses: number;
+}
+
+interface AttendanceData {
+  summary: AttendanceSummary;
+  courseAttendance: CourseAttendance[];
+  attendanceLogs: AttendanceLog[];
+  calendarEvents: Record<string, CalendarEvent[]>;
+}
+
+const mockAttendanceData: AttendanceData = {
+  summary: {
+    overallAttendance: 85,
+    threshold: 75,
+    totalClasses: 42,
+    attendedClasses: 36,
+    missedClasses: 6
+  },
+  courseAttendance: [
+    {
+      courseCode: "CS101",
+      courseName: "Introduction to Computer Science",
+      attendancePercentage: 92,
+      totalClasses: 12,
+      attendedClasses: 11,
+      missedClasses: 1,
+      schedule: "Mon, Wed 10:00 AM - 11:30 AM",
+      status: "Excellent"
+    },
+    {
+      courseCode: "MATH201",
+      courseName: "Calculus II",
+      attendancePercentage: 83,
+      totalClasses: 12,
+      attendedClasses: 10,
+      missedClasses: 2,
+      schedule: "Tue, Thu 1:00 PM - 2:30 PM",
+      status: "Good"
+    },
+    {
+      courseCode: "ENG102",
+      courseName: "Composition and Rhetoric",
+      attendancePercentage: 73,
+      totalClasses: 11,
+      attendedClasses: 8,
+      missedClasses: 3,
+      schedule: "Fri 9:00 AM - 12:00 PM",
+      status: "At Risk"
+    },
+    {
+      courseCode: "PHYS101",
+      courseName: "Introduction to Physics",
+      attendancePercentage: 100,
+      totalClasses: 7,
+      attendedClasses: 7,
+      missedClasses: 0,
+      schedule: "Mon, Wed 2:00 PM - 3:30 PM",
+      status: "Excellent"
+    }
+  ],
+  attendanceLogs: [
+    {
+      date: "2024-04-22",
+      courseCode: "CS101",
+      courseName: "Introduction to Computer Science",
+      time: "10:00 AM - 11:30 AM",
+      location: "Science Building, Room 301",
+      status: "Present"
+    },
+    {
+      date: "2024-04-22",
+      courseCode: "PHYS101",
+      courseName: "Introduction to Physics",
+      time: "2:00 PM - 3:30 PM",
+      location: "Science Building, Room 105",
+      status: "Present"
+    },
+    {
+      date: "2024-04-23",
+      courseCode: "MATH201",
+      courseName: "Calculus II",
+      time: "1:00 PM - 2:30 PM",
+      location: "Math Building, Room 204",
+      status: "Present"
+    },
+    {
+      date: "2024-04-25",
+      courseCode: "MATH201",
+      courseName: "Calculus II",
+      time: "1:00 PM - 2:30 PM", 
+      location: "Math Building, Room 204",
+      status: "Present"
+    },
+    {
+      date: "2024-04-24",
+      courseCode: "CS101",
+      courseName: "Introduction to Computer Science",
+      time: "10:00 AM - 11:30 AM",
+      location: "Science Building, Room 301",
+      status: "Present"
+    },
+    {
+      date: "2024-04-19",
+      courseCode: "ENG102",
+      courseName: "Composition and Rhetoric",
+      time: "9:00 AM - 12:00 PM",
+      location: "Humanities Building, Room 110",
+      status: "Absent",
+      reason: "Family emergency"
+    },
+    {
+      date: "2024-04-12",
+      courseCode: "ENG102",
+      courseName: "Composition and Rhetoric",
+      time: "9:00 AM - 12:00 PM",
+      location: "Humanities Building, Room 110", 
+      status: "Present"
+    }
+  ],
+  calendarEvents: {
+    "2024-04-19": [
+      {
+        status: "absent",
+        courseCode: "ENG102"
+      }
+    ],
+    "2024-04-22": [
+      {
+        status: "present",
+        courseCode: "CS101"
+      },
+      {
+        status: "present",
+        courseCode: "PHYS101"
+      }
+    ],
+    "2024-04-23": [
+      {
+        status: "present", 
+        courseCode: "MATH201"
+      }
+    ],
+    "2024-04-24": [
+      {
+        status: "present",
+        courseCode: "CS101"
+      }
+    ],
+    "2024-04-25": [
+      {
+        status: "present",
+        courseCode: "MATH201"
+      }
+    ]
+  }
 };
 
 const getStatusColor = (status: string) => {
-  // ... keep existing getStatusColor
+  switch (status) {
+    case 'Present':
+      return 'bg-green-100 text-green-800 border-green-200';
+    case 'Absent':
+      return 'bg-red-100 text-red-800 border-red-200';
+    default:
+      return 'bg-gray-100 text-gray-800 border-gray-200';
+  }
 };
 
 const getPerformanceColor = (percentage: number, threshold = 75) => {
-  // ... keep existing getPerformanceColor
+  if (percentage >= 90) {
+    return "text-green-600";
+  } else if (percentage >= threshold) {
+    return "text-blue-600";
+  } else {
+    return "text-red-600";
+  }
 };
 
 const getProgressColor = (percentage: number, threshold = 75) => {
-  // ... keep existing getProgressColor
+  if (percentage >= 90) {
+    return "bg-green-500";
+  } else if (percentage >= threshold) {
+    return "bg-blue-500";
+  } else {
+    return "bg-red-500";
+  }
 };
 
 export default function Attendance() {
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
-  const [attendanceData, setAttendanceData] = useState(mockAttendanceData);
+  const [attendanceData, setAttendanceData] = useState<AttendanceData>(mockAttendanceData);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [selectedCourse, setSelectedCourse] = useState<string | null>(null);
   
@@ -113,7 +317,6 @@ export default function Attendance() {
             <Progress 
               value={attendanceData.summary.overallAttendance} 
               className="h-2 mb-4"
-              indicator={{ className: getProgressColor(attendanceData.summary.overallAttendance) }}
             />
             <div className="grid grid-cols-2 gap-y-2 text-sm">
               <div>Total Classes:</div>
@@ -161,7 +364,6 @@ export default function Attendance() {
                     <Progress 
                       value={course.attendancePercentage} 
                       className="h-2 flex-1 mr-3"
-                      indicator={{ className: getProgressColor(course.attendancePercentage) }}
                     />
                     <span className={cn(
                       "font-medium text-sm",
@@ -424,7 +626,6 @@ export default function Attendance() {
                           <Progress 
                             value={course.attendancePercentage} 
                             className="h-3 flex-1 mr-3"
-                            indicator={{ className: getProgressColor(course.attendancePercentage) }}
                           />
                           <span className="text-sm">
                             {course.attendancePercentage}%
