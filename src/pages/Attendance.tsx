@@ -1,235 +1,18 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar } from '@/components/ui/calendar';
-import { Progress } from '@/components/ui/progress';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Spinner } from '@/components/ui/spinner';
-import { CheckCircle, XCircle, AlertCircle, CalendarDays, Clock, BarChart3, BookOpen, Calendar as CalendarIcon } from 'lucide-react';
+import { CheckCircle, XCircle, AlertCircle, CalendarDays, Clock, BookOpen, Calendar as CalendarIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
-// Define types for our attendance data
-interface AttendanceLog {
-  date: string;
-  courseCode: string;
-  courseName: string;
-  time: string;
-  location: string;
-  status: string;
-  reason?: string;
-}
-
-interface CourseAttendance {
-  courseCode: string;
-  courseName: string;
-  attendancePercentage: number;
-  totalClasses: number;
-  attendedClasses: number;
-  missedClasses: number;
-  schedule: string;
-  status: string;
-}
-
-interface CalendarEvent {
-  status: string;
-  courseCode: string;
-}
-
-interface AttendanceSummary {
-  overallAttendance: number;
-  threshold: number;
-  totalClasses: number;
-  attendedClasses: number;
-  missedClasses: number;
-}
-
-interface AttendanceData {
-  summary: AttendanceSummary;
-  courseAttendance: CourseAttendance[];
-  attendanceLogs: AttendanceLog[];
-  calendarEvents: Record<string, CalendarEvent[]>;
-}
-
-const mockAttendanceData: AttendanceData = {
-  summary: {
-    overallAttendance: 85,
-    threshold: 75,
-    totalClasses: 42,
-    attendedClasses: 36,
-    missedClasses: 6
-  },
-  courseAttendance: [
-    {
-      courseCode: "CS101",
-      courseName: "Introduction to Computer Science",
-      attendancePercentage: 92,
-      totalClasses: 12,
-      attendedClasses: 11,
-      missedClasses: 1,
-      schedule: "Mon, Wed 10:00 AM - 11:30 AM",
-      status: "Excellent"
-    },
-    {
-      courseCode: "MATH201",
-      courseName: "Calculus II",
-      attendancePercentage: 83,
-      totalClasses: 12,
-      attendedClasses: 10,
-      missedClasses: 2,
-      schedule: "Tue, Thu 1:00 PM - 2:30 PM",
-      status: "Good"
-    },
-    {
-      courseCode: "ENG102",
-      courseName: "Composition and Rhetoric",
-      attendancePercentage: 73,
-      totalClasses: 11,
-      attendedClasses: 8,
-      missedClasses: 3,
-      schedule: "Fri 9:00 AM - 12:00 PM",
-      status: "At Risk"
-    },
-    {
-      courseCode: "PHYS101",
-      courseName: "Introduction to Physics",
-      attendancePercentage: 100,
-      totalClasses: 7,
-      attendedClasses: 7,
-      missedClasses: 0,
-      schedule: "Mon, Wed 2:00 PM - 3:30 PM",
-      status: "Excellent"
-    }
-  ],
-  attendanceLogs: [
-    {
-      date: "2024-04-22",
-      courseCode: "CS101",
-      courseName: "Introduction to Computer Science",
-      time: "10:00 AM - 11:30 AM",
-      location: "Science Building, Room 301",
-      status: "Present"
-    },
-    {
-      date: "2024-04-22",
-      courseCode: "PHYS101",
-      courseName: "Introduction to Physics",
-      time: "2:00 PM - 3:30 PM",
-      location: "Science Building, Room 105",
-      status: "Present"
-    },
-    {
-      date: "2024-04-23",
-      courseCode: "MATH201",
-      courseName: "Calculus II",
-      time: "1:00 PM - 2:30 PM",
-      location: "Math Building, Room 204",
-      status: "Present"
-    },
-    {
-      date: "2024-04-25",
-      courseCode: "MATH201",
-      courseName: "Calculus II",
-      time: "1:00 PM - 2:30 PM", 
-      location: "Math Building, Room 204",
-      status: "Present"
-    },
-    {
-      date: "2024-04-24",
-      courseCode: "CS101",
-      courseName: "Introduction to Computer Science",
-      time: "10:00 AM - 11:30 AM",
-      location: "Science Building, Room 301",
-      status: "Present"
-    },
-    {
-      date: "2024-04-19",
-      courseCode: "ENG102",
-      courseName: "Composition and Rhetoric",
-      time: "9:00 AM - 12:00 PM",
-      location: "Humanities Building, Room 110",
-      status: "Absent",
-      reason: "Family emergency"
-    },
-    {
-      date: "2024-04-12",
-      courseCode: "ENG102",
-      courseName: "Composition and Rhetoric",
-      time: "9:00 AM - 12:00 PM",
-      location: "Humanities Building, Room 110", 
-      status: "Present"
-    }
-  ],
-  calendarEvents: {
-    "2024-04-19": [
-      {
-        status: "absent",
-        courseCode: "ENG102"
-      }
-    ],
-    "2024-04-22": [
-      {
-        status: "present",
-        courseCode: "CS101"
-      },
-      {
-        status: "present",
-        courseCode: "PHYS101"
-      }
-    ],
-    "2024-04-23": [
-      {
-        status: "present", 
-        courseCode: "MATH201"
-      }
-    ],
-    "2024-04-24": [
-      {
-        status: "present",
-        courseCode: "CS101"
-      }
-    ],
-    "2024-04-25": [
-      {
-        status: "present",
-        courseCode: "MATH201"
-      }
-    ]
-  }
-};
-
-const getStatusColor = (status: string) => {
-  switch (status) {
-    case 'Present':
-      return 'bg-green-100 text-green-800 border-green-200';
-    case 'Absent':
-      return 'bg-red-100 text-red-800 border-red-200';
-    default:
-      return 'bg-gray-100 text-gray-800 border-gray-200';
-  }
-};
-
-const getPerformanceColor = (percentage: number, threshold = 75) => {
-  if (percentage >= 90) {
-    return "text-green-600";
-  } else if (percentage >= threshold) {
-    return "text-blue-600";
-  } else {
-    return "text-red-600";
-  }
-};
-
-const getProgressColor = (percentage: number, threshold = 75) => {
-  if (percentage >= 90) {
-    return "bg-green-500";
-  } else if (percentage >= threshold) {
-    return "bg-blue-500";
-  } else {
-    return "bg-red-500";
-  }
-};
+import { AttendanceData } from '@/types/attendance';
+import { mockAttendanceData } from '@/data/mockAttendanceData';
+import { AttendanceSummaryCard } from '@/components/attendance/AttendanceSummaryCard';
+import { CourseProgressCard } from '@/components/attendance/CourseProgressCard';
+import { formatDate, getStatusColor } from '@/utils/attendance';
 
 export default function Attendance() {
   const { user } = useAuth();
@@ -248,14 +31,8 @@ export default function Attendance() {
     return () => clearTimeout(timer);
   }, []);
   
-  const formatDate = (dateString: string) => {
-    const options: Intl.DateTimeFormatOptions = { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' };
-    return new Date(dateString).toLocaleDateString(undefined, options);
-  };
-  
   const getLogsForSelectedDate = () => {
     if (!selectedDate) return [];
-    
     const dateStr = selectedDate.toISOString().split('T')[0];
     return attendanceData.attendanceLogs.filter(log => log.date === dateStr);
   };
@@ -294,92 +71,8 @@ export default function Attendance() {
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg flex items-center">
-              <BarChart3 className="mr-2 h-5 w-5 text-university-primary" />
-              Overall Attendance
-            </CardTitle>
-            <CardDescription>Current semester</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex justify-between items-end mb-2">
-              <span className={cn(
-                "text-4xl font-bold",
-                getPerformanceColor(attendanceData.summary.overallAttendance)
-              )}>
-                {attendanceData.summary.overallAttendance}%
-              </span>
-              <span className="text-sm text-muted-foreground">
-                Minimum required: {attendanceData.summary.threshold}%
-              </span>
-            </div>
-            <Progress 
-              value={attendanceData.summary.overallAttendance} 
-              className="h-2 mb-4"
-            />
-            <div className="grid grid-cols-2 gap-y-2 text-sm">
-              <div>Total Classes:</div>
-              <div className="text-right font-medium">{attendanceData.summary.totalClasses}</div>
-              
-              <div>Attended:</div>
-              <div className="text-right font-medium text-green-600">
-                {attendanceData.summary.attendedClasses}
-              </div>
-              
-              <div>Absent:</div>
-              <div className="text-right font-medium text-red-600">
-                {attendanceData.summary.missedClasses}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card className="md:col-span-2">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Attendance by Course</CardTitle>
-            <CardDescription>Current attendance percentages for all courses</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {attendanceData.courseAttendance.map(course => (
-                <div key={course.courseCode} className="space-y-1">
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <span className="font-medium">{course.courseCode}:</span>
-                      <span className="ml-1 text-sm">{course.courseName}</span>
-                    </div>
-                    <Badge 
-                      className={cn(
-                        course.status === 'Excellent' ? 'bg-green-100 text-green-800 border-green-200' :
-                        course.status === 'Good' ? 'bg-blue-100 text-blue-800 border-blue-200' :
-                        course.status === 'At Risk' ? 'bg-amber-100 text-amber-800 border-amber-200' :
-                        'bg-red-100 text-red-800 border-red-200'
-                      )}
-                    >
-                      {course.status}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center">
-                    <Progress 
-                      value={course.attendancePercentage} 
-                      className="h-2 flex-1 mr-3"
-                    />
-                    <span className={cn(
-                      "font-medium text-sm",
-                      getPerformanceColor(course.attendancePercentage)
-                    )}>
-                      {course.attendancePercentage}%
-                    </span>
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    {course.attendedClasses}/{course.totalClasses} classes attended • {course.schedule}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+        <AttendanceSummaryCard summary={attendanceData.summary} />
+        <CourseProgressCard courses={attendanceData.courseAttendance} />
       </div>
       
       <Tabs defaultValue="logs" className="mb-8">
