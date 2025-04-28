@@ -1,18 +1,20 @@
+
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Calendar } from '@/components/ui/calendar';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Spinner } from '@/components/ui/spinner';
+import { Progress } from '@/components/ui/progress';
 import { CheckCircle, XCircle, AlertCircle, CalendarDays, Clock, BookOpen, Calendar as CalendarIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { AttendanceData } from '@/types/attendance';
 import { mockAttendanceData } from '@/data/mockAttendanceData';
 import { AttendanceSummaryCard } from '@/components/attendance/AttendanceSummaryCard';
 import { CourseProgressCard } from '@/components/attendance/CourseProgressCard';
-import { formatDate, getStatusColor } from '@/utils/attendance';
+import { formatDate, getStatusColor, getPerformanceColor } from '@/utils/attendance';
 
 export default function Attendance() {
   const { user } = useAuth();
