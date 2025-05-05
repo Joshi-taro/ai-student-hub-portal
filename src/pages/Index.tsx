@@ -6,16 +6,18 @@ import { Spinner } from "@/components/ui/spinner";
 
 const Index = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, isLoading } = useAuth();
 
   useEffect(() => {
-    // Redirect to dashboard if logged in, otherwise to login page
+    if (isLoading) return;
+    
+    // Redirect based on user role
     if (user) {
-      navigate("/dashboard");
+      navigate("/dashboard"); // All roles go to dashboard first
     } else {
       navigate("/login");
     }
-  }, [user, navigate]);
+  }, [user, navigate, isLoading]);
 
   return (
     <div className="min-h-screen flex items-center justify-center">

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CalendarIcon, GraduationCap, BookOpen, ClipboardList, Bell, DollarSign } from "lucide-react";
+import { CalendarIcon, GraduationCap, BookOpen, ClipboardList, Bell, DollarSign, Users, BarChart, Settings } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
 // Mock data for demonstration
@@ -71,13 +71,45 @@ const facultyData = {
   ]
 };
 
+// New admin data
+const adminData = {
+  name: "Admin User",
+  id: "ADM20220001",
+  department: "Administration",
+  statistics: {
+    totalStudents: 1250,
+    totalFaculty: 78,
+    totalCourses: 95,
+    activeSemesters: 2
+  },
+  announcements: [
+    { id: 1, title: "End of Semester Procedures", date: "2025-05-12" },
+    { id: 2, title: "Faculty Evaluation Period", date: "2025-05-08" },
+    { id: 3, title: "Budget Meeting", date: "2025-05-15" },
+  ],
+  upcomingEvents: [
+    { id: 1, title: "Department Heads Meeting", date: "2025-04-28", time: "9:00 AM" },
+    { id: 2, title: "Admission Committee", date: "2025-04-30", time: "2:00 PM" },
+    { id: 3, title: "Board of Trustees", date: "2025-05-05", time: "10:00 AM" },
+  ],
+  recentActivities: [
+    { id: 1, description: "Approved course catalog for next semester", time: "Yesterday" },
+    { id: 2, description: "Updated faculty salary structures", time: "2 days ago" },
+    { id: 3, description: "Reviewed admission applications", time: "3 days ago" },
+  ]
+};
+
 export default function Dashboard() {
   const { user } = useAuth();
   const role = user?.role || 'student';
   const [tab, setTab] = useState("overview");
   
   // Select data based on user role
-  const data = role === 'student' ? studentData : facultyData;
+  const data = role === 'student' 
+    ? studentData 
+    : role === 'faculty' 
+      ? facultyData 
+      : adminData;
   
   return (
     <div className="container mx-auto px-4">
@@ -93,7 +125,9 @@ export default function Dashboard() {
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="courses">Courses</TabsTrigger>
+          {role === 'student' && <TabsTrigger value="courses">Courses</TabsTrigger>}
+          {role === 'faculty' && <TabsTrigger value="courses">My Courses</TabsTrigger>}
+          {role === 'admin' && <TabsTrigger value="management">Management</TabsTrigger>}
           {role === 'student' && <TabsTrigger value="attendance">Attendance</TabsTrigger>}
         </TabsList>
         
@@ -156,7 +190,7 @@ export default function Dashboard() {
                     </CardContent>
                   </Card>
                 </>
-              ) : (
+              ) : role === 'faculty' ? (
                 <>
                   <Card>
                     <CardHeader className="pb-2">
@@ -208,6 +242,58 @@ export default function Dashboard() {
                     <CardContent>
                       <div className="text-2xl font-bold">{facultyData.announcements.length}</div>
                       <p className="text-xs text-muted-foreground">Posted this month</p>
+                    </CardContent>
+                  </Card>
+                </>
+              ) : (
+                // Admin stats
+                <>
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium flex items-center">
+                        <Users className="h-4 w-4 mr-2 text-primary" />
+                        Students
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{adminData.statistics.totalStudents}</div>
+                      <p className="text-xs text-muted-foreground">Total enrolled</p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium flex items-center">
+                        <Users className="h-4 w-4 mr-2 text-primary" />
+                        Faculty
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{adminData.statistics.totalFaculty}</div>
+                      <p className="text-xs text-muted-foreground">Academic staff</p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium flex items-center">
+                        <BookOpen className="h-4 w-4 mr-2 text-primary" />
+                        Courses
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{adminData.statistics.totalCourses}</div>
+                      <p className="text-xs text-muted-foreground">Available courses</p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium flex items-center">
+                        <Settings className="h-4 w-4 mr-2 text-primary" />
+                        Active Semesters
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{adminData.statistics.activeSemesters}</div>
+                      <p className="text-xs text-muted-foreground">Currently running</p>
                     </CardContent>
                   </Card>
                 </>
@@ -294,7 +380,7 @@ export default function Dashboard() {
                 </CardHeader>
                 <CardContent>
                   <ul className="space-y-4">
-                    {facultyData.recentActivities.map(activity => (
+                    {(role === 'faculty' ? facultyData.recentActivities : adminData.recentActivities).map(activity => (
                       <li key={activity.id} className="pb-4 border-b last:border-0 last:pb-0">
                         <p>{activity.description}</p>
                         <p className="text-sm text-muted-foreground">{activity.time}</p>
@@ -348,6 +434,70 @@ export default function Dashboard() {
               ))}
             </div>
           </TabsContent>
+
+          {role === 'admin' && (
+            <TabsContent value="management" className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>User Management</CardTitle>
+                    <CardDescription>Manage students and faculty accounts</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <div className="p-4 border rounded-md bg-muted/50">
+                        <h3 className="font-medium flex items-center">
+                          <Users className="h-4 w-4 mr-2" />
+                          Student Management
+                        </h3>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Add, edit, or remove student accounts and profiles
+                        </p>
+                      </div>
+                      <div className="p-4 border rounded-md bg-muted/50">
+                        <h3 className="font-medium flex items-center">
+                          <Users className="h-4 w-4 mr-2" />
+                          Faculty Management
+                        </h3>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Manage faculty accounts, departments, and permissions
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+                
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Academic Management</CardTitle>
+                    <CardDescription>Manage courses and programs</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <div className="p-4 border rounded-md bg-muted/50">
+                        <h3 className="font-medium flex items-center">
+                          <BookOpen className="h-4 w-4 mr-2" />
+                          Course Management
+                        </h3>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Create and manage courses, assign faculty
+                        </p>
+                      </div>
+                      <div className="p-4 border rounded-md bg-muted/50">
+                        <h3 className="font-medium flex items-center">
+                          <BarChart className="h-4 w-4 mr-2" />
+                          Reporting
+                        </h3>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Access academic reports and analytics
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+          )}
 
           {role === 'student' && (
             <TabsContent value="attendance" className="space-y-6">

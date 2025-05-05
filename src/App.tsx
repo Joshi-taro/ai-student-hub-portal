@@ -21,6 +21,12 @@ import StudyHelper from "@/pages/StudyHelper";
 import Profile from "@/pages/Profile";
 import NotFound from "@/pages/NotFound";
 
+// New pages for faculty and admin
+import Students from "@/pages/Students";
+import Faculty from "@/pages/Faculty";
+import Reports from "@/pages/Reports";
+import Settings from "@/pages/Settings";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -106,6 +112,41 @@ const App = () => (
                   </AppLayout>
                 } 
               />
+              
+              {/* New routes for faculty and admin */}
+              <Route 
+                path="/students" 
+                element={
+                  <AppLayout>
+                    <Students />
+                  </AppLayout>
+                } 
+              />
+              <Route 
+                path="/faculty" 
+                element={
+                  <AppLayout>
+                    <Faculty />
+                  </AppLayout>
+                } 
+              />
+              <Route 
+                path="/reports" 
+                element={
+                  <AppLayout>
+                    <Reports />
+                  </AppLayout>
+                } 
+              />
+              <Route 
+                path="/settings" 
+                element={
+                  <AppLayout>
+                    <Settings />
+                  </AppLayout>
+                } 
+              />
+              
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
