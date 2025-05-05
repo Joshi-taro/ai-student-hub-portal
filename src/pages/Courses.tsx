@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -32,6 +31,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const initialMockCourses = {
   enrolled: [
@@ -100,6 +100,20 @@ const initialMockCourses = {
   ]
 };
 
+// Mock faculty data for assignment
+const mockFaculty = [
+  { id: "FAC20190001", name: "Dr. Robert Wilson", department: "Computer Science" },
+  { id: "FAC20180002", name: "Dr. Jane Smith", department: "Computer Science" },
+  { id: "FAC20200003", name: "Dr. Michael Brown", department: "Business Administration" },
+  { id: "FAC20150004", name: "Dr. Sarah Johnson", department: "Psychology" },
+  { id: "FAC20210005", name: "Dr. David Chen", department: "Electrical Engineering" },
+  { id: "FAC20220006", name: "Prof. Robert Johnson", department: "Mathematics" },
+  { id: "FAC20220007", name: "Dr. Emily Brown", department: "English" },
+  { id: "FAC20220008", name: "Dr. Michael Chen", department: "Physics" },
+  { id: "FAC20220009", name: "Prof. Sarah Wilson", department: "Biology" },
+  { id: "FAC20220010", name: "Dr. William Taylor", department: "Chemistry" },
+];
+
 type Course = {
   id: string;
   code: string;
@@ -127,6 +141,11 @@ export default function Courses() {
   const [courseToEdit, setCourseToEdit] = useState<Course | null>(null);
   const [courseToDelete, setCourseToDelete] = useState<string | null>(null);
   const [allCourses, setAllCourses] = useState<Course[]>([...initialMockCourses.enrolled, ...initialMockCourses.available]);
+  
+  // Faculty assignment state
+  const [isAssignFacultyDialogOpen, setIsAssignFacultyDialogOpen] = useState(false);
+  const [courseToAssign, setCourseToAssign] = useState<Course | null>(null);
+  const [selectedFaculty, setSelectedFaculty] = useState("");
   
   // Form states for add/edit
   const [formData, setFormData] = useState<Course>({
@@ -278,6 +297,72 @@ export default function Courses() {
     
     setCourseToDelete(null);
   };
+  
+  // Handle opening assign faculty dialog
+  const handleAssignFaculty = (courseId: string) => {
+    const course = allCourses.find(c => c.id === courseId);
+    if (course) {
+      setCourseToAssign(course);
+      setSelectedFaculty("");
+      setIsAssignFacultyDialogOpen(true);
+    }
+  };
+  
+  // Handle assigning faculty to course
+  const handleSaveFacultyAssignment = () => {
+    if (!courseToAssign || !selectedFaculty) return;
+    
+    const facultyMember = mockFaculty.find(f => f.id === selectedFaculty);
+    if (!facultyMember) return;
+    
+    // Update course with new instructor
+    const updatedCourse = {
+      ...courseToAssign,
+      instructor: facultyMember.name
+    };
+    
+    // Update in all courses
+    const updatedAllCourses = allCourses.map(c => 
+      c.id === courseToAssign.id ? updatedCourse : c
+    );
+    setAllCourses(updatedAllCourses);
+    
+    // Update in enrolled courses if it exists there
+    if (enrolledCourses.some(c => c.id === courseToAssign.id)) {
+      setEnrolledCourses(enrolledCourses.map(c => 
+        c.id === courseToAssign.id ? updatedCourse : c
+      ));
+    }
+    
+    // Update in available courses if it exists there
+    if (availableCourses.some(c => c.id === courseToAssign.id)) {
+      setAvailableCourses(availableCourses.map(c => 
+        c.id === courseToAssign.id ? updatedCourse : c
+      ));
+    }
+    
+    toast.success(`Faculty assigned`, {
+      description: `${facultyMember.name} is now assigned to teach ${courseToAssign.code}.`
+    });
+    
+    setIsAssignFacultyDialogOpen(false);
+    setCourseToAssign(null);
+    setSelectedFaculty("");
+  };
+  
+  // Filter faculty by department for more relevant assignment options
+  const getRelevantFaculty = (course: Course) => {
+    // First show faculty from the same department, then others
+    const departmentFaculty = mockFaculty.filter(f => 
+      f.department.toLowerCase() === course.department.toLowerCase()
+    );
+    
+    const otherFaculty = mockFaculty.filter(f => 
+      f.department.toLowerCase() !== course.department.toLowerCase()
+    );
+    
+    return [...departmentFaculty, ...otherFaculty];
+  };
 
   const renderCourseCard = (course: Course, isEnrolled = false) => (
     <Card key={course.id} className="mb-4 animate-fade-in">
@@ -305,6 +390,14 @@ export default function Courses() {
               title="Edit Course"
             >
               <Edit className="h-4 w-4" />
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={() => handleAssignFaculty(course.id)}
+              title="Assign Faculty"
+            >
+              <Plus className="h-4 w-4" />
             </Button>
             <AlertDialog>
               <AlertDialogTrigger asChild>
@@ -345,7 +438,7 @@ export default function Courses() {
         <div className="flex items-center text-sm">
           <GraduationCap className="mr-2 text-university-secondary" size={16} />
           <span className="font-medium">Instructor:</span>
-          <span className="ml-1">{course.instructor}</span>
+          <span className="ml-1">{course.instructor || "Not assigned"}</span>
         </div>
         <div className="flex items-center text-sm">
           <Clock className="mr-2 text-university-secondary" size={16} />
@@ -532,7 +625,9 @@ export default function Courses() {
                   value={formData.instructor} 
                   onChange={handleInputChange}
                   placeholder="e.g., Dr. Jane Smith" 
+                  disabled
                 />
+                <p className="text-xs text-muted-foreground">Use the Assign Faculty button to change instructor</p>
               </div>
             </div>
             <div className="space-y-2">
@@ -634,8 +729,9 @@ export default function Courses() {
                   name="instructor"
                   value={formData.instructor} 
                   onChange={handleInputChange}
-                  placeholder="e.g., Dr. Jane Smith" 
+                  placeholder="Not assigned yet" 
                 />
+                <p className="text-xs text-muted-foreground">You can assign faculty after creating the course</p>
               </div>
             </div>
             <div className="space-y-2">
@@ -665,6 +761,64 @@ export default function Courses() {
               Cancel
             </Button>
             <Button onClick={handleAddNewCourse}>Add Course</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Assign Faculty Dialog */}
+      <Dialog open={isAssignFacultyDialogOpen} onOpenChange={setIsAssignFacultyDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Assign Faculty</DialogTitle>
+            <DialogDescription>
+              {courseToAssign && `Assign a faculty member to teach ${courseToAssign.code}: ${courseToAssign.name}.`}
+            </DialogDescription>
+          </DialogHeader>
+          {courseToAssign && (
+            <div className="grid gap-4 py-4">
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <Label htmlFor="faculty">Select Faculty</Label>
+                  {courseToAssign.instructor && (
+                    <Badge variant="outline" className="px-2 py-0.5">
+                      Current: {courseToAssign.instructor}
+                    </Badge>
+                  )}
+                </div>
+                
+                <Select 
+                  value={selectedFaculty} 
+                  onValueChange={setSelectedFaculty}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select a faculty member" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">-- Select Faculty --</SelectItem>
+                    {getRelevantFaculty(courseToAssign).map(faculty => (
+                      <SelectItem key={faculty.id} value={faculty.id}>
+                        {faculty.name} ({faculty.department})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setIsAssignFacultyDialogOpen(false);
+              setCourseToAssign(null);
+              setSelectedFaculty("");
+            }}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleSaveFacultyAssignment}
+              disabled={!selectedFaculty}
+            >
+              Assign Faculty
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
