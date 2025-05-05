@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,8 +7,38 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Spinner } from '@/components/ui/spinner';
-import { Bell, Search, Filter, BookOpen, Calendar, Megaphone } from 'lucide-react';
+import { Bell, Search, Filter, BookOpen, Calendar, Megaphone, Plus, Edit, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
+import { 
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from '@/components/ui/select';
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 // Mock announcements data
 const mockAnnouncements = [
@@ -125,13 +156,43 @@ const getTypeColor = (type: string) => {
   }
 };
 
+type Announcement = {
+  id: string;
+  title: string;
+  content: string;
+  date: string;
+  author: string;
+  type: string;
+  department: string;
+  isImportant: boolean;
+  course: string | null;
+};
+
 export default function Announcements() {
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
-  const [announcements, setAnnouncements] = useState(mockAnnouncements);
+  const [announcements, setAnnouncements] = useState<Announcement[]>(mockAnnouncements);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedAnnouncement, setSelectedAnnouncement] = useState<string | null>(null);
   const [filter, setFilter] = useState('all');
+  
+  // Admin announcement management states
+  const role = user?.role || 'student';
+  const isAdmin = role === 'admin';
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [announcementToDelete, setAnnouncementToDelete] = useState<string | null>(null);
+  
+  // Form state
+  const [formData, setFormData] = useState<Omit<Announcement, 'id' | 'date'> & {date?: string}>({
+    title: '',
+    content: '',
+    author: '',
+    type: 'Academic',
+    department: 'University-wide',
+    isImportant: false,
+    course: null
+  });
   
   useEffect(() => {
     // Simulate API fetch delay
@@ -158,6 +219,139 @@ export default function Announcements() {
       (announcement.course && announcement.course.toLowerCase().includes(searchQuery.toLowerCase()))
     )
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  
+  // Handle form input changes
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | 
+    { target: { name: string, value: string } }
+  ) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+  
+  // Handle toggle important
+  const handleToggleImportant = (value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      isImportant: value === 'true'
+    }));
+  };
+  
+  // Handle type selection
+  const handleTypeChange = (value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      type: value
+    }));
+  };
+  
+  // Handle course selection
+  const handleCourseChange = (value: string | null) => {
+    setFormData(prev => ({
+      ...prev,
+      course: value
+    }));
+  };
+  
+  // Handle department selection
+  const handleDepartmentChange = (value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      department: value
+    }));
+  };
+  
+  // Handle edit announcement
+  const handleEditAnnouncement = (announcementId: string) => {
+    const announcement = announcements.find(a => a.id === announcementId);
+    if (announcement) {
+      setFormData({
+        title: announcement.title,
+        content: announcement.content,
+        author: announcement.author,
+        type: announcement.type,
+        department: announcement.department,
+        isImportant: announcement.isImportant,
+        course: announcement.course
+      });
+      setIsEditDialogOpen(true);
+      setSelectedAnnouncement(announcementId);
+    }
+  };
+  
+  // Handle save edit
+  const handleSaveEdit = () => {
+    if (!selectedAnnouncement) return;
+    
+    const updatedAnnouncements = announcements.map(announcement =>
+      announcement.id === selectedAnnouncement
+        ? {
+            ...announcement,
+            title: formData.title,
+            content: formData.content,
+            author: formData.author,
+            type: formData.type,
+            department: formData.department,
+            isImportant: formData.isImportant,
+            course: formData.course
+          }
+        : announcement
+    );
+    
+    setAnnouncements(updatedAnnouncements);
+    setIsEditDialogOpen(false);
+    
+    toast.success("Announcement updated", {
+      description: "The announcement has been successfully updated."
+    });
+  };
+  
+  // Handle add announcement
+  const handleAddAnnouncement = () => {
+    const newAnnouncement: Announcement = {
+      id: `${Date.now()}`,
+      title: formData.title,
+      content: formData.content,
+      date: new Date().toISOString(),
+      author: formData.author,
+      type: formData.type,
+      department: formData.department,
+      isImportant: formData.isImportant,
+      course: formData.course
+    };
+    
+    setAnnouncements([newAnnouncement, ...announcements]);
+    setIsAddDialogOpen(false);
+    
+    toast.success("Announcement created", {
+      description: "The new announcement has been published successfully."
+    });
+    
+    // Reset form data
+    setFormData({
+      title: '',
+      content: '',
+      author: '',
+      type: 'Academic',
+      department: 'University-wide',
+      isImportant: false,
+      course: null
+    });
+  };
+  
+  // Handle delete announcement
+  const handleDeleteAnnouncement = (announcementId: string) => {
+    setAnnouncements(announcements.filter(a => a.id !== announcementId));
+    setSelectedAnnouncement(null);
+    setAnnouncementToDelete(null);
+    
+    toast.success("Announcement deleted", {
+      description: "The announcement has been permanently removed."
+    });
+  };
 
   if (isLoading) {
     return (
@@ -173,10 +367,20 @@ export default function Announcements() {
   return (
     <div className="container mx-auto px-4">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold mb-2">Announcements</h1>
-        <p className="text-muted-foreground">
-          Stay updated with the latest university and course announcements
-        </p>
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold mb-2">Announcements</h1>
+            <p className="text-muted-foreground">
+              Stay updated with the latest university and course announcements
+            </p>
+          </div>
+          
+          {isAdmin && (
+            <Button onClick={() => setIsAddDialogOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" /> New Announcement
+            </Button>
+          )}
+        </div>
       </div>
       
       <div className="flex flex-col md:flex-row gap-4 mb-6">
@@ -301,12 +505,53 @@ export default function Announcements() {
                             {selected.author} • {formatDate(selected.date)}
                           </CardDescription>
                         </div>
-                        <Badge 
-                          variant="outline"
-                          className={getTypeColor(selected.type)}
-                        >
-                          {selected.type}
-                        </Badge>
+                        <div className="flex gap-2">
+                          {isAdmin && (
+                            <>
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                onClick={() => handleEditAnnouncement(selected.id)}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button 
+                                    variant="ghost" 
+                                    size="icon"
+                                    onClick={() => setAnnouncementToDelete(selected.id)}
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Delete announcement?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      This will permanently remove this announcement. This action cannot be undone.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction
+                                      onClick={() => handleDeleteAnnouncement(selected.id)}
+                                      className="bg-destructive hover:bg-destructive/90"
+                                    >
+                                      Delete
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            </>
+                          )}
+                          <Badge 
+                            variant="outline"
+                            className={getTypeColor(selected.type)}
+                          >
+                            {selected.type}
+                          </Badge>
+                        </div>
                       </div>
                     </CardHeader>
                     <CardContent>
@@ -341,6 +586,247 @@ export default function Announcements() {
           </Card>
         </div>
       </div>
+      
+      {/* Add Announcement Dialog */}
+      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Create New Announcement</DialogTitle>
+            <DialogDescription>
+              Fill out the form below to create a new announcement.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="title">Title</Label>
+              <Input 
+                id="title" 
+                name="title"
+                value={formData.title} 
+                onChange={handleInputChange}
+                placeholder="Announcement title" 
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="content">Content</Label>
+              <Textarea 
+                id="content" 
+                name="content"
+                value={formData.content} 
+                onChange={handleInputChange}
+                placeholder="Announcement content..." 
+                rows={5}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="author">Author</Label>
+              <Input 
+                id="author" 
+                name="author"
+                value={formData.author} 
+                onChange={handleInputChange}
+                placeholder="e.g., Office of Academic Affairs" 
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="type">Announcement Type</Label>
+                <Select
+                  value={formData.type}
+                  onValueChange={handleTypeChange}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Academic">Academic</SelectItem>
+                    <SelectItem value="Administrative">Administrative</SelectItem>
+                    <SelectItem value="Course">Course</SelectItem>
+                    <SelectItem value="Facility">Facility</SelectItem>
+                    <SelectItem value="Financial">Financial</SelectItem>
+                    <SelectItem value="Health">Health</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="department">Department/Course</Label>
+                {formData.type === 'Course' ? (
+                  <Select
+                    value={formData.course || ''}
+                    onValueChange={(val) => handleCourseChange(val)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select course" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="CS101">CS101</SelectItem>
+                      <SelectItem value="MATH201">MATH201</SelectItem>
+                      <SelectItem value="ENG102">ENG102</SelectItem>
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <Select
+                    value={formData.department}
+                    onValueChange={handleDepartmentChange}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select department" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="University-wide">University-wide</SelectItem>
+                      <SelectItem value="Computer Science">Computer Science</SelectItem>
+                      <SelectItem value="Mathematics">Mathematics</SelectItem>
+                      <SelectItem value="English">English</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Important Announcement</Label>
+              <RadioGroup
+                value={formData.isImportant ? 'true' : 'false'}
+                onValueChange={handleToggleImportant}
+                className="flex space-x-4"
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="true" id="important-yes" />
+                  <Label htmlFor="important-yes">Yes</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="false" id="important-no" />
+                  <Label htmlFor="important-no">No</Label>
+                </div>
+              </RadioGroup>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleAddAnnouncement}>Create Announcement</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Edit Announcement Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Announcement</DialogTitle>
+            <DialogDescription>
+              Make changes to the announcement details below.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-title">Title</Label>
+              <Input 
+                id="edit-title" 
+                name="title"
+                value={formData.title} 
+                onChange={handleInputChange}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-content">Content</Label>
+              <Textarea 
+                id="edit-content" 
+                name="content"
+                value={formData.content} 
+                onChange={handleInputChange}
+                rows={5}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-author">Author</Label>
+              <Input 
+                id="edit-author" 
+                name="author"
+                value={formData.author} 
+                onChange={handleInputChange}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-type">Announcement Type</Label>
+                <Select
+                  value={formData.type}
+                  onValueChange={handleTypeChange}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Academic">Academic</SelectItem>
+                    <SelectItem value="Administrative">Administrative</SelectItem>
+                    <SelectItem value="Course">Course</SelectItem>
+                    <SelectItem value="Facility">Facility</SelectItem>
+                    <SelectItem value="Financial">Financial</SelectItem>
+                    <SelectItem value="Health">Health</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-department">Department/Course</Label>
+                {formData.type === 'Course' ? (
+                  <Select
+                    value={formData.course || ''}
+                    onValueChange={(val) => handleCourseChange(val)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="CS101">CS101</SelectItem>
+                      <SelectItem value="MATH201">MATH201</SelectItem>
+                      <SelectItem value="ENG102">ENG102</SelectItem>
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <Select
+                    value={formData.department}
+                    onValueChange={handleDepartmentChange}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="University-wide">University-wide</SelectItem>
+                      <SelectItem value="Computer Science">Computer Science</SelectItem>
+                      <SelectItem value="Mathematics">Mathematics</SelectItem>
+                      <SelectItem value="English">English</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Important Announcement</Label>
+              <RadioGroup
+                value={formData.isImportant ? 'true' : 'false'}
+                onValueChange={handleToggleImportant}
+                className="flex space-x-4"
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="true" id="edit-important-yes" />
+                  <Label htmlFor="edit-important-yes">Yes</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="false" id="edit-important-no" />
+                  <Label htmlFor="edit-important-no">No</Label>
+                </div>
+              </RadioGroup>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSaveEdit}>Save Changes</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

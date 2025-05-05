@@ -7,6 +7,27 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Search, Plus, Edit, Trash2, Mail, Phone, BookOpen } from "lucide-react";
+import { toast } from "sonner";
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { 
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 // Mock faculty data
 const mockFaculty = [
@@ -75,14 +96,62 @@ const mockFaculty = [
 export default function Faculty() {
   const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
+  const [faculty, setFaculty] = useState(mockFaculty);
+  const [facultyToDelete, setFacultyToDelete] = useState<string | null>(null);
   
   // Filter faculty based on search term
-  const filteredFaculty = mockFaculty.filter(faculty => 
+  const filteredFaculty = faculty.filter(faculty => 
     faculty.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
     faculty.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
     faculty.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
     faculty.department.toLowerCase().includes(searchTerm.toLowerCase())
   );
+  
+  // Handle viewing faculty courses
+  const handleViewCourses = (facultyId: string) => {
+    const facultyMember = faculty.find(f => f.id === facultyId);
+    if (facultyMember) {
+      toast.info(`Viewing courses for ${facultyMember.name}`, {
+        description: `Currently teaching ${facultyMember.courses} courses this semester.`
+      });
+    }
+  };
+
+  // Handle sending email to faculty
+  const handleSendEmail = (facultyId: string) => {
+    const facultyMember = faculty.find(f => f.id === facultyId);
+    if (facultyMember) {
+      toast.success(`Email draft opened for ${facultyMember.name}`, {
+        description: `Recipient: ${facultyMember.email}`
+      });
+    }
+  };
+
+  // Handle editing faculty
+  const handleEditFaculty = (facultyId: string) => {
+    const facultyMember = faculty.find(f => f.id === facultyId);
+    if (facultyMember) {
+      toast.info(`Editing faculty record for ${facultyMember.name}`, {
+        description: "Faculty edit form would open here"
+      });
+    }
+  };
+
+  // Handle deleting faculty
+  const handleDeleteFaculty = (facultyId: string) => {
+    setFaculty(prevFaculty => prevFaculty.filter(f => f.id !== facultyId));
+    toast.success("Faculty removed successfully", {
+      description: "The faculty member has been removed from the system"
+    });
+    setFacultyToDelete(null);
+  };
+
+  // Handle adding new faculty
+  const handleAddFaculty = () => {
+    toast.info("Add Faculty", { 
+      description: "New faculty form would open here" 
+    });
+  };
 
   return (
     <div className="container mx-auto px-4">
@@ -94,7 +163,7 @@ export default function Faculty() {
           </p>
         </div>
         
-        <Button>
+        <Button onClick={handleAddFaculty}>
           <Plus className="mr-2 h-4 w-4" /> Add New Faculty
         </Button>
       </div>
@@ -149,18 +218,62 @@ export default function Faculty() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
-                        <Button variant="ghost" size="icon">
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          title="View Courses"
+                          onClick={() => handleViewCourses(faculty.id)}
+                        >
                           <BookOpen className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="icon">
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          title="Send Email"
+                          onClick={() => handleSendEmail(faculty.id)}
+                        >
                           <Mail className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="icon">
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          title="Edit Faculty"
+                          onClick={() => handleEditFaculty(faculty.id)}
+                        >
                           <Edit className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="icon">
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button 
+                              variant="ghost" 
+                              size="icon"
+                              title="Delete Faculty"
+                              onClick={() => setFacultyToDelete(faculty.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                This will permanently remove {faculty.name} from the system.
+                                This action cannot be undone.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel onClick={() => setFacultyToDelete(null)}>
+                                Cancel
+                              </AlertDialogCancel>
+                              <AlertDialogAction 
+                                onClick={() => handleDeleteFaculty(faculty.id)}
+                                className="bg-destructive hover:bg-destructive/90"
+                              >
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                       </div>
                     </TableCell>
                   </TableRow>
