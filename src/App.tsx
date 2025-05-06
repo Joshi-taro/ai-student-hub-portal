@@ -20,6 +20,7 @@ import Attendance from "@/pages/Attendance";
 import StudyHelper from "@/pages/StudyHelper";
 import Profile from "@/pages/Profile";
 import NotFound from "@/pages/NotFound";
+import Exams from "@/pages/Exams";
 
 // New pages for faculty and admin
 import Students from "@/pages/Students";
@@ -109,6 +110,14 @@ const App = () => (
                 element={
                   <AppLayout>
                     <Profile />
+                  </AppLayout>
+                } 
+              />
+              <Route 
+                path="/exams" 
+                element={
+                  <AppLayout>
+                    <Exams />
                   </AppLayout>
                 } 
               />

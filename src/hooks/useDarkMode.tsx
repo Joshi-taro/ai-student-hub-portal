@@ -31,8 +31,11 @@ export const DarkModeProvider = ({ children }: { children: React.ReactNode }) =>
   useEffect(() => {
     if (isDark) {
       document.documentElement.classList.add('dark');
+      // Add a class to fix text input visibility in dark mode
+      document.documentElement.classList.add('dark-inputs');
     } else {
       document.documentElement.classList.remove('dark');
+      document.documentElement.classList.remove('dark-inputs');
     }
     
     localStorage.setItem('uniPortalTheme', isDark ? 'dark' : 'light');
