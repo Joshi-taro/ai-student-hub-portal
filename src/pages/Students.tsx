@@ -1,5 +1,6 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -20,86 +21,69 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
-// Mock student data
-const mockStudents = [
-  {
-    id: "STU20230001",
-    name: "John Smith",
-    email: "john.smith@university.edu",
-    program: "Computer Science",
-    year: 2,
-    gpa: 3.75,
-    status: "active",
-    advisor: "Dr. Jane Faculty",
-    phone: "555-123-4567",
-    enrollmentDate: "2023-08-15",
-  },
-  {
-    id: "STU20230002",
-    name: "Emma Johnson",
-    email: "emma.johnson@university.edu",
-    program: "Business Administration",
-    year: 3,
-    gpa: 3.9,
-    status: "active",
-    advisor: "Dr. Michael Brown",
-    phone: "555-234-5678",
-    enrollmentDate: "2022-08-20",
-  },
-  {
-    id: "STU20230003",
-    name: "Ahmed Hassan",
-    email: "ahmed.hassan@university.edu",
-    program: "Electrical Engineering",
-    year: 4,
-    gpa: 3.5,
-    status: "active",
-    advisor: "Dr. Jane Faculty",
-    phone: "555-345-6789",
-    enrollmentDate: "2021-08-18",
-  },
-  {
-    id: "STU20230004",
-    name: "Sophia Chen",
-    email: "sophia.chen@university.edu",
-    program: "Psychology",
-    year: 2,
-    gpa: 3.8,
-    status: "active",
-    advisor: "Dr. Robert Wilson",
-    phone: "555-456-7890",
-    enrollmentDate: "2023-08-15",
-  },
-  {
-    id: "STU20230005",
-    name: "David Williams",
-    email: "david.williams@university.edu",
-    program: "Computer Science",
-    year: 3,
-    gpa: 3.2,
-    status: "probation",
-    advisor: "Dr. Jane Faculty",
-    phone: "555-567-8901",
-    enrollmentDate: "2022-08-20",
-  },
-];
+// Define interfaces for the student data
+interface Student {
+  id: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  program?: string;
+  year?: number;
+  gpa?: number;
+  status?: string;
+  advisor?: string;
+  phone?: string;
+  enrollment_date?: string;
+  profile_pic?: string | null;
+  role: string;
+}
 
 export default function Students() {
   const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("all");
   const role = user?.role || 'faculty';
-  const [students, setStudents] = useState(mockStudents);
   const [studentToDelete, setStudentToDelete] = useState<string | null>(null);
   
+  // Fetch students from Supabase
+  const { data: students = [], isLoading, error, refetch } = useQuery({
+    queryKey: ['students'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('role', 'student');
+      
+      if (error) {
+        throw new Error(error.message);
+      }
+      
+      // Transform the data to match our Student interface
+      return data.map(student => ({
+        ...student,
+        name: `${student.first_name} ${student.last_name}`,
+        program: student.program || 'Computer Science', // Default value
+        year: student.year || 1,
+        gpa: student.gpa || 3.0,
+        status: student.status || 'active',
+        advisor: student.advisor || 'Dr. Jane Faculty',
+        phone: student.phone || '555-123-4567',
+        enrollment_date: student.enrollment_date || new Date().toISOString().split('T')[0]
+      })) as Student[];
+    },
+    enabled: !!user
+  });
+
   // Filter students based on search term and active tab
   const filteredStudents = students.filter(student => {
+    const fullName = `${student.first_name} ${student.last_name}`.toLowerCase();
     const matchesSearch = 
-      student.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+      fullName.includes(searchTerm.toLowerCase()) || 
       student.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
       student.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      student.program.toLowerCase().includes(searchTerm.toLowerCase());
+      (student.program || '').toLowerCase().includes(searchTerm.toLowerCase());
     
     if (activeTab === "all") return matchesSearch;
     if (activeTab === "probation") return matchesSearch && student.status === "probation";
@@ -108,11 +92,18 @@ export default function Students() {
     return matchesSearch;
   });
 
+  // Handle adding a new student
+  const handleAddStudent = async () => {
+    toast.info("Add Student", { 
+      description: "New student form would open here"
+    });
+  };
+
   // Handle viewing student academic record
   const handleViewAcademicRecord = (studentId: string) => {
     const student = students.find(s => s.id === studentId);
     if (student) {
-      toast.info(`Viewing academic record for ${student.name}`, {
+      toast.info(`Viewing academic record for ${student.first_name} ${student.last_name}`, {
         description: `GPA: ${student.gpa}, Program: ${student.program}, Year: ${student.year}`
       });
     }
@@ -122,7 +113,7 @@ export default function Students() {
   const handleSendEmail = (studentId: string) => {
     const student = students.find(s => s.id === studentId);
     if (student) {
-      toast.success(`Email draft opened for ${student.name}`, {
+      toast.success(`Email draft opened for ${student.first_name} ${student.last_name}`, {
         description: `Recipient: ${student.email}`
       });
     }
@@ -132,20 +123,62 @@ export default function Students() {
   const handleEditStudent = (studentId: string) => {
     const student = students.find(s => s.id === studentId);
     if (student) {
-      toast.info(`Editing student record for ${student.name}`, {
+      toast.info(`Editing student record for ${student.first_name} ${student.last_name}`, {
         description: "Student edit form would open here"
       });
     }
   };
 
   // Handle deleting student
-  const handleDeleteStudent = (studentId: string) => {
-    setStudents(prevStudents => prevStudents.filter(student => student.id !== studentId));
-    toast.success("Student removed successfully", {
-      description: "The student has been removed from the system"
-    });
-    setStudentToDelete(null);
+  const handleDeleteStudent = async (studentId: string) => {
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', studentId);
+      
+      if (error) throw error;
+      
+      toast.success("Student removed successfully", {
+        description: "The student has been removed from the system"
+      });
+      setStudentToDelete(null);
+      refetch(); // Refresh the data
+    } catch (error) {
+      toast.error("Failed to delete student", {
+        description: "An error occurred while removing the student"
+      });
+      console.error("Delete error:", error);
+    }
   };
+
+  if (isLoading) {
+    return (
+      <div className="container mx-auto px-4 flex justify-center items-center h-64">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading students...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="container mx-auto px-4">
+        <Card className="border-destructive">
+          <CardHeader>
+            <CardTitle className="text-destructive">Error Loading Students</CardTitle>
+            <CardDescription>There was a problem retrieving student data</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p>{(error as Error).message}</p>
+            <Button onClick={() => refetch()} className="mt-4">Retry</Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto px-4">
@@ -158,7 +191,7 @@ export default function Students() {
         </div>
         
         {role === 'admin' && (
-          <Button onClick={() => toast.info("Add Student", { description: "New student form would open here" })}>
+          <Button onClick={handleAddStudent}>
             <Plus className="mr-2 h-4 w-4" /> Add New Student
           </Button>
         )}
@@ -206,86 +239,94 @@ export default function Students() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredStudents.map((student) => (
-                      <TableRow key={student.id}>
-                        <TableCell className="font-medium">{student.id}</TableCell>
-                        <TableCell>{student.name}</TableCell>
-                        <TableCell>{student.program}</TableCell>
-                        <TableCell>{student.year}</TableCell>
-                        <TableCell>{student.gpa}</TableCell>
-                        <TableCell>
-                          <Badge 
-                            variant={student.status === 'active' ? 'outline' : 'destructive'}
-                          >
-                            {student.status === 'active' ? 'Active' : 'Probation'}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
-                              title="View Academic Record"
-                              onClick={() => handleViewAcademicRecord(student.id)}
+                    {filteredStudents.length > 0 ? (
+                      filteredStudents.map((student) => (
+                        <TableRow key={student.id}>
+                          <TableCell className="font-medium">{student.id.substring(0, 8)}</TableCell>
+                          <TableCell>{student.first_name} {student.last_name}</TableCell>
+                          <TableCell>{student.program}</TableCell>
+                          <TableCell>{student.year}</TableCell>
+                          <TableCell>{student.gpa}</TableCell>
+                          <TableCell>
+                            <Badge 
+                              variant={student.status === 'active' ? 'outline' : 'destructive'}
                             >
-                              <GraduationCap className="h-4 w-4" />
-                            </Button>
-                            <Button 
-                              variant="ghost" 
-                              size="icon"
-                              title="Send Email"
-                              onClick={() => handleSendEmail(student.id)}
-                            >
-                              <Mail className="h-4 w-4" />
-                            </Button>
-                            {role === 'admin' && (
-                              <>
-                                <Button 
-                                  variant="ghost" 
-                                  size="icon"
-                                  title="Edit Student"
-                                  onClick={() => handleEditStudent(student.id)}
-                                >
-                                  <Edit className="h-4 w-4" />
-                                </Button>
-                                <AlertDialog>
-                                  <AlertDialogTrigger asChild>
-                                    <Button 
-                                      variant="ghost" 
-                                      size="icon"
-                                      title="Delete Student"
-                                      onClick={() => setStudentToDelete(student.id)}
-                                    >
-                                      <Trash2 className="h-4 w-4" />
-                                    </Button>
-                                  </AlertDialogTrigger>
-                                  <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                      <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                      <AlertDialogDescription>
-                                        This will permanently remove {student.name} from the system.
-                                        This action cannot be undone.
-                                      </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                      <AlertDialogCancel onClick={() => setStudentToDelete(null)}>
-                                        Cancel
-                                      </AlertDialogCancel>
-                                      <AlertDialogAction 
-                                        onClick={() => handleDeleteStudent(student.id)}
-                                        className="bg-destructive hover:bg-destructive/90"
+                              {student.status === 'active' ? 'Active' : 'Probation'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-2">
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                title="View Academic Record"
+                                onClick={() => handleViewAcademicRecord(student.id)}
+                              >
+                                <GraduationCap className="h-4 w-4" />
+                              </Button>
+                              <Button 
+                                variant="ghost" 
+                                size="icon"
+                                title="Send Email"
+                                onClick={() => handleSendEmail(student.id)}
+                              >
+                                <Mail className="h-4 w-4" />
+                              </Button>
+                              {role === 'admin' && (
+                                <>
+                                  <Button 
+                                    variant="ghost" 
+                                    size="icon"
+                                    title="Edit Student"
+                                    onClick={() => handleEditStudent(student.id)}
+                                  >
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                  <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                      <Button 
+                                        variant="ghost" 
+                                        size="icon"
+                                        title="Delete Student"
+                                        onClick={() => setStudentToDelete(student.id)}
                                       >
-                                        Delete
-                                      </AlertDialogAction>
-                                    </AlertDialogFooter>
-                                  </AlertDialogContent>
-                                </AlertDialog>
-                              </>
-                            )}
-                          </div>
+                                        <Trash2 className="h-4 w-4" />
+                                      </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                      <AlertDialogHeader>
+                                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                          This will permanently remove {student.first_name} {student.last_name} from the system.
+                                          This action cannot be undone.
+                                        </AlertDialogDescription>
+                                      </AlertDialogHeader>
+                                      <AlertDialogFooter>
+                                        <AlertDialogCancel onClick={() => setStudentToDelete(null)}>
+                                          Cancel
+                                        </AlertDialogCancel>
+                                        <AlertDialogAction 
+                                          onClick={() => handleDeleteStudent(student.id)}
+                                          className="bg-destructive hover:bg-destructive/90"
+                                        >
+                                          Delete
+                                        </AlertDialogAction>
+                                      </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                  </AlertDialog>
+                                </>
+                              )}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={7} className="text-center py-8">
+                          No students found matching your search criteria
                         </TableCell>
                       </TableRow>
-                    ))}
+                    )}
                   </TableBody>
                 </Table>
               </div>
