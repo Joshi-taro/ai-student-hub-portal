@@ -311,34 +311,55 @@ export type Database = {
       }
       profiles: {
         Row: {
+          advisor: string | null
           created_at: string
           email: string
+          enrollment_date: string | null
           first_name: string
+          gpa: number | null
           id: string
           last_name: string
+          phone: string | null
           profile_pic: string | null
+          program: string | null
           role: string
+          status: string | null
           updated_at: string
+          year: number | null
         }
         Insert: {
+          advisor?: string | null
           created_at?: string
           email: string
+          enrollment_date?: string | null
           first_name: string
+          gpa?: number | null
           id: string
           last_name: string
+          phone?: string | null
           profile_pic?: string | null
+          program?: string | null
           role: string
+          status?: string | null
           updated_at?: string
+          year?: number | null
         }
         Update: {
+          advisor?: string | null
           created_at?: string
           email?: string
+          enrollment_date?: string | null
           first_name?: string
+          gpa?: number | null
           id?: string
           last_name?: string
+          phone?: string | null
           profile_pic?: string | null
+          program?: string | null
           role?: string
+          status?: string | null
           updated_at?: string
+          year?: number | null
         }
         Relationships: []
       }

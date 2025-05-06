@@ -29,15 +29,17 @@ interface Student {
   first_name: string;
   last_name: string;
   email: string;
-  program?: string;
-  year?: number;
-  gpa?: number;
-  status?: string;
-  advisor?: string;
-  phone?: string;
-  enrollment_date?: string;
-  profile_pic?: string | null;
+  program: string | null;
+  year: number | null;
+  gpa: number | null;
+  status: string | null;
+  advisor: string | null;
+  phone: string | null;
+  enrollment_date: string | null;
+  profile_pic: string | null;
   role: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export default function Students() {
@@ -60,18 +62,7 @@ export default function Students() {
         throw new Error(error.message);
       }
       
-      // Transform the data to match our Student interface
-      return data.map(student => ({
-        ...student,
-        name: `${student.first_name} ${student.last_name}`,
-        program: student.program || 'Computer Science', // Default value
-        year: student.year || 1,
-        gpa: student.gpa || 3.0,
-        status: student.status || 'active',
-        advisor: student.advisor || 'Dr. Jane Faculty',
-        phone: student.phone || '555-123-4567',
-        enrollment_date: student.enrollment_date || new Date().toISOString().split('T')[0]
-      })) as Student[];
+      return data as Student[];
     },
     enabled: !!user
   });
@@ -104,7 +95,7 @@ export default function Students() {
     const student = students.find(s => s.id === studentId);
     if (student) {
       toast.info(`Viewing academic record for ${student.first_name} ${student.last_name}`, {
-        description: `GPA: ${student.gpa}, Program: ${student.program}, Year: ${student.year}`
+        description: `GPA: ${student.gpa || 'N/A'}, Program: ${student.program || 'N/A'}, Year: ${student.year || 'N/A'}`
       });
     }
   };
@@ -244,14 +235,14 @@ export default function Students() {
                         <TableRow key={student.id}>
                           <TableCell className="font-medium">{student.id.substring(0, 8)}</TableCell>
                           <TableCell>{student.first_name} {student.last_name}</TableCell>
-                          <TableCell>{student.program}</TableCell>
-                          <TableCell>{student.year}</TableCell>
-                          <TableCell>{student.gpa}</TableCell>
+                          <TableCell>{student.program || 'Not set'}</TableCell>
+                          <TableCell>{student.year || 'N/A'}</TableCell>
+                          <TableCell>{student.gpa || 'N/A'}</TableCell>
                           <TableCell>
                             <Badge 
-                              variant={student.status === 'active' ? 'outline' : 'destructive'}
+                              variant={student.status !== 'probation' ? 'outline' : 'destructive'}
                             >
-                              {student.status === 'active' ? 'Active' : 'Probation'}
+                              {student.status || 'Active'}
                             </Badge>
                           </TableCell>
                           <TableCell className="text-right">
