@@ -22,6 +22,14 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { 
+  Pagination, 
+  PaginationContent, 
+  PaginationItem, 
+  PaginationLink, 
+  PaginationNext, 
+  PaginationPrevious 
+} from "@/components/ui/pagination";
 
 // Define interfaces for the student data
 interface Student {
@@ -42,6 +50,38 @@ interface Student {
   updated_at: string;
 }
 
+// Create mock student data since we can't add it to the database
+const generateMockStudents = (count: number): Student[] => {
+  const firstNames = ['John', 'Emma', 'Michael', 'Sophia', 'James', 'Olivia', 'Daniel', 'Ava', 'William', 'Isabella'];
+  const lastNames = ['Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Garcia', 'Martinez', 'Rodriguez', 'Hernandez', 'Lopez'];
+  const programs = ['Computer Science', 'Biology', 'Psychology', 'Mathematics', 'History', 'English Literature', 'Physics', 'Chemistry'];
+  const advisors = ['Dr. Jane Faculty', 'Dr. Robert Chen', 'Dr. Sarah Miller', 'Dr. David White', 'Dr. Mary Taylor'];
+  const statuses = ['active', 'probation'];
+  
+  return Array.from({ length: count }, (_, i) => {
+    const firstName = firstNames[Math.floor(Math.random() * firstNames.length)];
+    const lastName = lastNames[Math.floor(Math.random() * lastNames.length)];
+    
+    return {
+      id: `mock-${i + 1}`,
+      first_name: firstName,
+      last_name: lastName,
+      email: `${firstName.toLowerCase()}.${lastName.toLowerCase()}${i + 1}@university.edu`,
+      program: programs[Math.floor(Math.random() * programs.length)],
+      year: Math.floor(Math.random() * 4) + 1,
+      gpa: parseFloat((Math.random() * (4.0 - 2.0) + 2.0).toFixed(2)),
+      status: statuses[Math.floor(Math.random() * statuses.length)],
+      advisor: advisors[Math.floor(Math.random() * advisors.length)],
+      phone: `555-123-${String(1000 + i).padStart(4, '0')}`,
+      enrollment_date: new Date(2020 + Math.floor(Math.random() * 4), 8, 1).toISOString().split('T')[0],
+      profile_pic: null,
+      role: 'student',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+  });
+};
+
 export default function Students() {
   const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
@@ -49,8 +89,13 @@ export default function Students() {
   const role = user?.role || 'faculty';
   const [studentToDelete, setStudentToDelete] = useState<string | null>(null);
   
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
+  const [mockStudents] = useState(() => generateMockStudents(25));
+  
   // Fetch students from Supabase
-  const { data: students = [], isLoading, error, refetch } = useQuery({
+  const { data: fetchedStudents = [], isLoading, error, refetch } = useQuery({
     queryKey: ['students'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -67,6 +112,9 @@ export default function Students() {
     enabled: !!user
   });
 
+  // Combine real and mock students
+  const students = [...fetchedStudents, ...mockStudents];
+
   // Filter students based on search term and active tab
   const filteredStudents = students.filter(student => {
     const fullName = `${student.first_name} ${student.last_name}`.toLowerCase();
@@ -82,6 +130,49 @@ export default function Students() {
     
     return matchesSearch;
   });
+
+  // Pagination logic
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentStudents = filteredStudents.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(filteredStudents.length / itemsPerPage);
+
+  // Change page
+  const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
+
+  // Generate page numbers
+  const pageNumbers = [];
+  const maxPageButtons = 5;
+  
+  if (totalPages <= maxPageButtons) {
+    // Show all page numbers
+    for (let i = 1; i <= totalPages; i++) {
+      pageNumbers.push(i);
+    }
+  } else {
+    // Show limited page numbers with ellipsis
+    if (currentPage <= 3) {
+      for (let i = 1; i <= 4; i++) {
+        pageNumbers.push(i);
+      }
+      pageNumbers.push('ellipsis');
+      pageNumbers.push(totalPages);
+    } else if (currentPage >= totalPages - 2) {
+      pageNumbers.push(1);
+      pageNumbers.push('ellipsis');
+      for (let i = totalPages - 3; i <= totalPages; i++) {
+        pageNumbers.push(i);
+      }
+    } else {
+      pageNumbers.push(1);
+      pageNumbers.push('ellipsis');
+      pageNumbers.push(currentPage - 1);
+      pageNumbers.push(currentPage);
+      pageNumbers.push(currentPage + 1);
+      pageNumbers.push('ellipsis');
+      pageNumbers.push(totalPages);
+    }
+  }
 
   // Handle adding a new student
   const handleAddStudent = async () => {
@@ -122,6 +213,15 @@ export default function Students() {
 
   // Handle deleting student
   const handleDeleteStudent = async (studentId: string) => {
+    // For mock students, just show a success message
+    if (studentId.startsWith('mock-')) {
+      toast.success("Mock student removed", {
+        description: "This was a mock student and has been removed from the view"
+      });
+      setStudentToDelete(null);
+      return;
+    }
+
     try {
       const { error } = await supabase
         .from('profiles')
@@ -195,12 +295,18 @@ export default function Students() {
             placeholder="Search students..." 
             className="pl-8"
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(e) => {
+              setSearchTerm(e.target.value);
+              setCurrentPage(1); // Reset to first page on new search
+            }}
           />
         </div>
       </div>
       
-      <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab}>
+      <Tabs defaultValue="all" value={activeTab} onValueChange={(value) => {
+        setActiveTab(value);
+        setCurrentPage(1); // Reset to first page when changing tabs
+      }}>
         <TabsList>
           <TabsTrigger value="all">All Students</TabsTrigger>
           {role === 'faculty' && <TabsTrigger value="advisees">My Advisees</TabsTrigger>}
@@ -213,6 +319,7 @@ export default function Students() {
               <CardTitle>Student Directory</CardTitle>
               <CardDescription>
                 {filteredStudents.length} {filteredStudents.length === 1 ? 'student' : 'students'} found
+                {filteredStudents.length > itemsPerPage && ` (showing ${indexOfFirstItem + 1}-${Math.min(indexOfLastItem, filteredStudents.length)} of ${filteredStudents.length})`}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -230,8 +337,8 @@ export default function Students() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredStudents.length > 0 ? (
-                      filteredStudents.map((student) => (
+                    {currentStudents.length > 0 ? (
+                      currentStudents.map((student) => (
                         <TableRow key={student.id}>
                           <TableCell className="font-medium">{student.id.substring(0, 8)}</TableCell>
                           <TableCell>{student.first_name} {student.last_name}</TableCell>
@@ -321,6 +428,47 @@ export default function Students() {
                   </TableBody>
                 </Table>
               </div>
+
+              {/* Pagination */}
+              {filteredStudents.length > itemsPerPage && (
+                <div className="mt-6">
+                  <Pagination>
+                    <PaginationContent>
+                      <PaginationItem>
+                        <PaginationPrevious 
+                          onClick={() => currentPage > 1 && paginate(currentPage - 1)}
+                          className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                          aria-disabled={currentPage === 1}
+                        />
+                      </PaginationItem>
+                      
+                      {pageNumbers.map((number, index) => (
+                        <PaginationItem key={index}>
+                          {number === 'ellipsis' ? (
+                            <div className="px-4 py-2">...</div>
+                          ) : (
+                            <PaginationLink
+                              isActive={currentPage === number}
+                              onClick={() => paginate(number as number)}
+                              className="cursor-pointer"
+                            >
+                              {number}
+                            </PaginationLink>
+                          )}
+                        </PaginationItem>
+                      ))}
+                      
+                      <PaginationItem>
+                        <PaginationNext 
+                          onClick={() => currentPage < totalPages && paginate(currentPage + 1)}
+                          className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                          aria-disabled={currentPage === totalPages}
+                        />
+                      </PaginationItem>
+                    </PaginationContent>
+                  </Pagination>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
