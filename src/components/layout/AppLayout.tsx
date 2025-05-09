@@ -1,5 +1,5 @@
 
-import { ReactNode, useEffect } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Sidebar } from "@/components/layout/Sidebar";
@@ -7,6 +7,7 @@ import { Header } from "@/components/layout/Header";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { ChatbotButton } from "@/components/ChatbotButton";
 import { Spinner } from "@/components/ui/spinner";
+import { Toaster } from "@/components/ui/toaster";
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -14,6 +15,7 @@ interface AppLayoutProps {
 
 export default function AppLayout({ children }: AppLayoutProps) {
   const { user, isLoading } = useAuth();
+  const [showChatbot, setShowChatbot] = useState(false);
 
   // If loading, show spinner
   if (isLoading) {
@@ -38,8 +40,10 @@ export default function AppLayout({ children }: AppLayoutProps) {
           <main className="flex-1 p-4 sm:p-6 overflow-auto">
             {children}
           </main>
-          <ChatbotButton />
+          {/* ChatbotButton will be shown or hidden based on state */}
+          <ChatbotButton initialState={showChatbot} />
         </div>
+        <Toaster />
       </div>
     </SidebarProvider>
   );

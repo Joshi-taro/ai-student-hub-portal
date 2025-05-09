@@ -1,18 +1,27 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { MessageSquare, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 
-export function ChatbotButton() {
-  const [isOpen, setIsOpen] = useState(false);
+interface ChatbotButtonProps {
+  initialState?: boolean;
+}
+
+export function ChatbotButton({ initialState = false }: ChatbotButtonProps) {
+  const [isOpen, setIsOpen] = useState(initialState);
   const [messages, setMessages] = useState<{role: 'user' | 'bot', content: string}[]>([
     { role: 'bot', content: 'Hello! I\'m your university assistant. How can I help you today?' }
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  // Effect to update isOpen when initialState changes
+  useEffect(() => {
+    setIsOpen(initialState);
+  }, [initialState]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,13 +65,15 @@ export function ChatbotButton() {
 
   return (
     <>
-      {/* Chatbot button */}
-      <Button
-        className="fixed right-6 bottom-6 rounded-full h-12 w-12 shadow-lg"
-        onClick={() => setIsOpen(true)}
-      >
-        <MessageSquare className="h-5 w-5" />
-      </Button>
+      {/* Chatbot button - only shown when chat is not open */}
+      {!isOpen && (
+        <Button
+          className="fixed right-6 bottom-6 rounded-full h-12 w-12 shadow-lg"
+          onClick={() => setIsOpen(true)}
+        >
+          <MessageSquare className="h-5 w-5" />
+        </Button>
+      )}
 
       {/* Chat dialog */}
       {isOpen && (
